@@ -1,0 +1,168 @@
+#!/usr/bin/env bash
+# boots-analytics — roll up the funnel across every system in this repo.
+#
+# The read side of Layer A: turns the per-system state/systems/<slug>/events.jsonl
+# (plus system.md for current declared state) into "where do systems flow and
+# stall". Consumed by the board skills (boots router, boots-surface) which narrate
+# it in Boots' voice, by boots-retire (cold-since), and runnable directly by you.
+#
+# Works today: current stage/status come from system.md (always present), so your
+# existing systems show up now. It sharpens as funnel events land — last-moved
+# time and abandonment come from events.jsonl when present, else the record's mtime.
+#
+# Usage:
+#   boots-analytics              full board (default)
+#   boots-analytics --brief      compact form for a skill to read + re-narrate
+#   boots-analytics --stale-days N   stalled threshold (default 14)
+#
+# Reads the current repo (state/systems/ under CWD). Never mutates anything.
+set -uo pipefail
+
+STATE_DIR="${BOOTS_HOME:-$HOME/.boots}"
+SYSTEMS_DIR="state/systems"
+BRIEF=0
+STALE_DAYS=14
+COMMUNITY=0
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --brief) BRIEF=1; shift ;;
+    --community) COMMUNITY=1; shift ;;
+    --stale-days) STALE_DAYS="$2"; shift 2 ;;
+    *) shift ;;
+  esac
+done
+
+# ─── Community funnel (--community): the aggregate across all opted-in installs.
+# Fail-closed — a backend error reads as "unknown", never as healthy zeros.
+if [ "$COMMUNITY" -eq 1 ]; then
+  _SELF="$(cd "$(dirname "$0")" && pwd -P)"
+  BOOTS_DIR="${BOOTS_DIR:-$(cd "$_SELF/../../../.." && pwd -P)}"
+  if [ -z "${BOOTS_SUPABASE_URL:-}" ] && [ -f "$BOOTS_DIR/supabase/config.sh" ]; then . "$BOOTS_DIR/supabase/config.sh"; fi
+  URL="${BOOTS_SUPABASE_URL:-}"; KEY="${BOOTS_SUPABASE_ANON_KEY:-}"
+  echo "Boots — community funnel"
+  echo "════════════════════════"
+  [ -z "$URL" ] && { echo "Not available yet — no telemetry backend is provisioned."; exit 0; }
+  TMP="$(mktemp)"; trap 'rm -f "$TMP"' EXIT
+  CODE="$(curl -s -o "$TMP" -w '%{http_code}' --max-time 15 "${URL}/functions/v1/community-pulse" -H "apikey: ${KEY}" 2>/dev/null || echo 000)"
+  CODE="$(printf '%s' "$CODE" | tr -dc 0-9 | tail -c 3)"; [ -n "$CODE" ] || CODE=000
+  DATA="$(cat "$TMP" 2>/dev/null || echo)"
+  if [ "$CODE" != "200" ] || ! printf '%s' "$DATA" | grep -q '"status":"ok"'; then
+    echo "Community stats: unknown — backend error (HTTP $CODE)"; exit 0
+  fi
+  printf '%s' "$DATA" | grep -q '"stale":true' && echo "  (stale snapshot — backend recompute failing; figures may be out of date)"
+  WA="$(printf '%s' "$DATA" | grep -o '"weekly_active":[0-9]*' | grep -o '[0-9]*' | head -1)"
+  SH="$(printf '%s' "$DATA" | grep -o '"shipped":[0-9]*' | grep -o '[0-9]*' | head -1)"
+  AB="$(printf '%s' "$DATA" | grep -o '"abandoned":[0-9]*' | grep -o '[0-9]*' | head -1)"
+  GV="$(printf '%s' "$DATA" | grep -o '"graveyard":"[^"]*"' | sed 's/"graveyard":"//;s/"$//')"
+  echo "Weekly active installs: ${WA:-0}"
+  echo "Shipped this week: ${SH:-0}  ·  Abandoned: ${AB:-0}"
+  echo "Community graveyard (the stage systems die at most): ${GV:-none yet}"
+  exit 0
+fi
+
+now=$(date +%s)
+
+iso_to_epoch() {
+  [ -z "$1" ] && { echo 0; return; }
+  date -d "$1" +%s 2>/dev/null || date -j -f "%Y-%m-%dT%H:%M:%SZ" "$1" +%s 2>/dev/null || echo 0
+}
+file_mtime() { stat -f %m "$1" 2>/dev/null || stat -c %Y "$1" 2>/dev/null || echo 0; }
+field() { grep -m1 "^$2:" "$1" 2>/dev/null | sed "s/^$2:[[:space:]]*//; s/[[:space:]]*#.*//; s/[[:space:]]*\$//"; }
+
+if [ ! -d "$SYSTEMS_DIR" ]; then
+  echo "No systems yet in this repo (state/systems/ is empty)."
+  exit 0
+fi
+
+# ─── Gather per-system rows: "days<TAB>slug<TAB>stage<TAB>status<TAB>terminal" ──
+rows=""
+total=0; shipped=0; retired=0; active=0; stalled=0
+declare -a STAGE_KEYS=(clarify scope build review verify ship)
+clarify_n=0 scope_n=0 build_n=0 review_n=0 verify_n=0 ship_n=0 other_n=0
+graveyard=""
+
+for d in "$SYSTEMS_DIR"/*/; do
+  [ -d "$d" ] || continue
+  md="$d/system.md"; [ -f "$md" ] || continue
+  slug=$(basename "$d")
+  stage=$(field "$md" stage); status=$(field "$md" status)
+  [ -z "$stage" ] && stage="unknown"
+  ev="$d/events.jsonl"
+  if [ -f "$ev" ]; then
+    last_ts=$(grep -o '"ts":"[^"]*"' "$ev" 2>/dev/null | tail -1 | sed 's/"ts":"//;s/"//')
+    last_epoch=$(iso_to_epoch "$last_ts")
+    # accumulate abandonment (retired events) → graveyard by from_stage
+    while IFS= read -r fs; do graveyard="$graveyard$fs"$'\n'; done < <(grep '"event":"retired"' "$ev" 2>/dev/null | grep -o '"from_stage":"[^"]*"' | sed 's/"from_stage":"//;s/"//')
+  else
+    last_epoch=$(file_mtime "$md")
+  fi
+  [ "$last_epoch" -gt 0 ] 2>/dev/null || last_epoch=$now
+  days=$(( (now - last_epoch) / 86400 )); [ "$days" -lt 0 ] && days=0
+
+  case "$status" in
+    *shipped*) term="shipped"; shipped=$((shipped+1)) ;;
+    *retired*) term="retired"; retired=$((retired+1)) ;;
+    *)         term="active";  active=$((active+1))
+               [ "$days" -ge "$STALE_DAYS" ] && stalled=$((stalled+1)) ;;
+  esac
+  case "$stage" in
+    clarify) clarify_n=$((clarify_n+1)) ;; scope) scope_n=$((scope_n+1)) ;;
+    build) build_n=$((build_n+1)) ;; review) review_n=$((review_n+1)) ;;
+    verify) verify_n=$((verify_n+1)) ;; ship) ship_n=$((ship_n+1)) ;;
+    *) other_n=$((other_n+1)) ;;
+  esac
+  total=$((total+1))
+  rows="$rows$(printf '%06d\t%s\t%s\t%s\t%s' "$days" "$slug" "$stage" "$status" "$term")"$'\n'
+done
+
+if [ "$total" -eq 0 ]; then echo "No systems with a record yet."; exit 0; fi
+
+# Graveyard stage = most common from_stage among retired events
+grave_line="none yet"
+if [ -n "$graveyard" ]; then
+  gtop=$(printf '%s' "$graveyard" | grep -v '^$' | sort | uniq -c | sort -rn | head -1)
+  [ -n "$gtop" ] && grave_line="$(echo "$gtop" | awk '{print $2" ("$1")"}')"
+fi
+
+pipeline="clarify $clarify_n · scope $scope_n · build $build_n · review $review_n · verify $verify_n · ship $ship_n"
+[ "$other_n" -gt 0 ] && pipeline="$pipeline · other $other_n"
+
+# ─── Render ──────────────────────────────────────────────────
+sorted=$(printf '%s' "$rows" | grep -v '^$' | sort -rn)
+
+if [ "$BRIEF" -eq 1 ]; then
+  echo "FUNNEL total=$total shipped=$shipped retired=$retired active=$active stalled_${STALE_DAYS}d=$stalled"
+  echo "PIPELINE $pipeline"
+  echo "GRAVEYARD $grave_line"
+  echo "$sorted" | while IFS=$'\t' read -r days slug stage status term; do
+    printf 'SYS %s stage=%s state=%s cold=%dd\n' "$slug" "$stage" "$term" "$((10#$days))"
+  done
+  exit 0
+fi
+
+echo "Boots — where your systems stand (this repo)"
+echo "════════════════════════════════════════════"
+echo "Pipeline:  $pipeline"
+echo "Shipped: $shipped  ·  Abandoned: $retired  ·  Active: $active  ·  Stalled (>${STALE_DAYS}d): $stalled"
+echo "Graveyard (stage systems get abandoned from): $grave_line"
+echo ""
+echo "By staleness (coldest first):"
+echo "$sorted" | while IFS=$'\t' read -r days slug stage status term; do
+  printf "  %-22s %-8s %-11s %dd\n" "$slug" "$stage" "$term" "$((10#$days))"
+done
+
+# Ops layer summary, if any (usage/crashes) — only when telemetry has written runs.
+runs="$STATE_DIR/analytics/runs.jsonl"
+if [ -f "$runs" ] && [ -s "$runs" ]; then
+  echo ""
+  echo "Skill usage (ops layer, this machine):"
+  total_runs=$(wc -l < "$runs" | tr -d ' ')
+  # grep -c prints "0" AND exits 1 on zero matches; a `|| echo 0` fallback would
+  # then double-count to "0\n0". Keep grep's own count; default to 0 only if the
+  # file is missing (grep prints nothing).
+  errs=$(grep -c '"outcome":"error"' "$runs" 2>/dev/null || true); errs=${errs:-0}
+  unknown=$(grep -c '"outcome":"unknown"' "$runs" 2>/dev/null || true); unknown=${unknown:-0}
+  echo "  $total_runs runs · $errs errors · $unknown crashed"
+  grep -o '"skill":"[^"]*"' "$runs" 2>/dev/null | sed 's/"skill":"//;s/"//' | sort | uniq -c | sort -rn | head -8 \
+    | while read -r c s; do printf "  %-22s %s\n" "$s" "$c"; done
+fi

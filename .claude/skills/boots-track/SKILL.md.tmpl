@@ -1,0 +1,88 @@
+---
+name: boots-track
+description: >
+  Boots cross-cutting. Promote a loose, abandoned thread into a tracked system with
+  state, a form, and a next step, so it stops rotting and enters the pipeline. The
+  bridge from wherever your unfinished AI work lives (a loose-ends scanner, a notes
+  file, a memory, your own recall) into a boots system. Use when the user says
+  "boots-track", "pick this back up", "make this a system", or points at an
+  abandoned thread worth reviving.
+preamble-tier: 1
+---
+
+{{PREAMBLE}}
+
+# Boots track (cross-cutting)
+
+Track is the bridge. Unfinished AI work piles up somewhere, an abandoned chat, a
+half-built plugin, a note that says "should automate this." Track takes one of
+those and promotes it into a real boots system so the pipeline can finish it. This
+is how dead threads come back to life: one at a time, each becoming a tracked
+system with a stage and a next step.
+
+To the user this is just **"picking something you started and dropped back up, and
+giving it a real plan so it gets finished this time."** Never say "track", "promote",
+"thread", or "the pipeline" to them. Refer to the thing in their own words for it.
+
+Follow all the rules in `boots/SKILL.md` — "How Boots talks", including the
+plain-English translation table.
+
+## Where the thread comes from
+
+The candidates come from `boots-prospect`, the feeder — it mines every backend the
+user has (a loose-ends store, memory, past transcripts, repo TODOs, other AI tools)
+and hands back a ranked field, each with the evidence and, if it came from a
+backend, its record `id`. Invoke it, or reuse the field it already surfaced this
+session. If the user points you straight at one thread ("pick up the plugin thing"),
+you don't need the full scan — take that one.
+
+## What you do
+
+1. **Surface the candidates** — take the ranked field from `boots-prospect` (or the
+   one thread the user pointed at) and quote them back.
+2. **Pick the thread** the user named, or the one whose finishing would unlock the
+   most, as a decision brief.
+3. **Create the system** from it. Carry a loose-end `id` only if the thread came
+   from a backend that has one, it lets the closer reuse that backend's verify.
+   **Name the slug from what the thread was *really* trying to do** (the foundation
+   paragraph below), not from its original title. An abandoned thread called "plugin
+   attempt 4" is not the system's name; what it was reaching for is:
+
+   ```bash
+   mkdir -p state/systems/<slug>
+   ```
+
+   ```markdown
+   # System: <slug>
+
+   status: clarifying
+   stage: clarify
+   form: (decided at scope)
+   next_step: run boots-clarify to sharpen this, or boots-scope if it's already clear
+   target: n/a
+   id: <loose-end id, or omit>
+
+   ## now
+   last worked: <date>, this chat
+   reality: just picked up from an abandoned thread — nothing built
+   you are here: revived <source ref>; not yet sharpened or scoped
+   next physical action: sharpen what it's really for, or scope it if already clear
+
+   ## foundation
+   <one paragraph on what this thread was really trying to do>
+
+   ## log
+   - <date> track, promoted <source ref> into a system
+   ```
+
+   If the thread is already well understood, you may send it straight to
+   `boots-scope`; if it is still fuzzy, route through `boots-clarify` first.
+
+## The rule
+
+Promote deliberately, not in bulk. A tracked system you will actually finish beats
+ten promoted threads that re-rot. This is Move 4, lightweight by default: only
+promote when there is real intent to work it.
+
+
+{{FUNNEL_EMIT:?:created}}

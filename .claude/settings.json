@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(.venv/bin/python -m toolkit:*)",
+      "Bash(python3 -m toolkit:*)",
+      "Bash(python -m toolkit:*)",
+      "Bash(ls state/queue:*)",
+      "Bash(ls state:*)",
+      "Bash(uv venv:*)",
+      "Bash(uv pip install:*)"
+    ]
+  }
+}

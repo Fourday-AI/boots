@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+# boots-config — read/write ~/.boots/config.yaml (flat key: value).
+#
+# Usage:
+#   boots-config get <key>          — print value, or the built-in default, else empty
+#   boots-config set <key> <value>  — write a value (creates the file on first set)
+#   boots-config list               — print all effective values (file over defaults)
+#
+# Lean port of gstack-config: flat YAML, no nesting, no schema validation beyond
+# the DEFAULTS table below. Everything the preamble reads lives here.
+#
+# Env overrides (for testing):
+#   BOOTS_HOME — override ~/.boots state dir
+set -uo pipefail
+
+STATE_DIR="${BOOTS_HOME:-$HOME/.boots}"
+CONFIG_FILE="$STATE_DIR/config.yaml"
+
+# ─── Defaults (canonical) ────────────────────────────────────
+default_for() {
+  case "$1" in
+    telemetry)     echo "off" ;;      # off | anonymous | community
+    proactive)     echo "true" ;;
+    auto_upgrade)  echo "false" ;;
+    update_check)  echo "true" ;;
+    *)             echo "" ;;
+  esac
+}
+
+CONFIG_HEADER='# Boots configuration — edit freely; changes take effect on the next skill run.
+#
+# telemetry: off        # off | anonymous | community
+#                       #   off       — nothing sent, no local analytics (default)
+#                       #   anonymous — aggregate counts only, no device id
+#                       #   community — usage + a stable random device id
+# proactive: true       # let Boots suggest the next skill; false = only what you invoke
+# auto_upgrade: false    # true = upgrade silently on session start
+# update_check: true     # false = never check for updates
+'
+
+cmd="${1:-}"
+
+case "$cmd" in
+  get)
+    key="${2:-}"
+    [ -z "$key" ] && { echo "usage: boots-config get <key>" >&2; exit 2; }
+    if [ -f "$CONFIG_FILE" ]; then
+      val="$(grep -E "^${key}:[[:space:]]*" "$CONFIG_FILE" 2>/dev/null | head -1 | sed -E "s/^${key}:[[:space:]]*//; s/[[:space:]]*$//")"
+      if [ -n "$val" ]; then echo "$val"; exit 0; fi
+    fi
+    default_for "$key"
+    ;;
+
+  set)
+    key="${2:-}"; val="${3:-}"
+    [ -z "$key" ] && { echo "usage: boots-config set <key> <value>" >&2; exit 2; }
+    mkdir -p "$STATE_DIR"
+    if [ ! -f "$CONFIG_FILE" ]; then
+      printf '%s' "$CONFIG_HEADER" > "$CONFIG_FILE"
+    fi
+    if grep -qE "^${key}:" "$CONFIG_FILE" 2>/dev/null; then
+      # Replace in place (portable sed: write to temp, move back)
+      tmp="$(mktemp "${TMPDIR:-/tmp}/boots-config-XXXXXX")" || exit 1
+      sed -E "s|^${key}:.*|${key}: ${val}|" "$CONFIG_FILE" > "$tmp" && mv "$tmp" "$CONFIG_FILE"
+    else
+      printf '%s: %s\n' "$key" "$val" >> "$CONFIG_FILE"
+    fi
+    ;;
+
+  list)
+    for k in telemetry proactive auto_upgrade update_check; do
+      printf '%s: %s\n' "$k" "$("$0" get "$k")"
+    done
+    ;;
+
+  *)
+    echo "usage: boots-config {get <key> | set <key> <value> | list}" >&2
+    exit 2
+    ;;
+esac

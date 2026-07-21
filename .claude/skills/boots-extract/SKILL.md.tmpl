@@ -1,0 +1,75 @@
+---
+name: boots-extract
+description: >
+  Boots cross-cutting. Run a feedback-extraction pass when a system ships or real
+  feedback arrives: what did this teach, what pattern does it confirm or break,
+  what should change. The loop that makes work compound instead of being a one-off.
+  Use when a system is shipped and the user says "boots-extract", "what did we
+  learn", or after external feedback lands.
+preamble-tier: 1
+---
+
+{{PREAMBLE}}
+
+# Boots extract (cross-cutting)
+
+Extract is the compounding loop. Without it, every shipped system is a one-time
+event and the coach never gets smarter. When a system ships, or feedback comes
+back, extract asks what it taught and writes that lesson somewhere it will be
+read again.
+
+To the user this is just **"jotting down what we learned so the next one goes
+smoother."** Never say "extract", "the lesson", or "the loop" to them. Most of this
+step is backstage; if you say anything, say plainly what you noticed and where it
+now lives ("I'll remember you care more about taste than a polished CV").
+
+## Input
+
+A shipped system at `state/systems/<slug>/system.md`, or a piece of external
+feedback the user pastes.
+
+## What you do
+
+1. Read the system's `## log` and `## foundation`. What actually happened versus
+   what was predicted?
+2. Pull the lesson. Be concrete: a pattern confirmed ("the closer split into
+   three did catch a gap review missed"), a pattern broken ("scope was still too
+   big, the slice took three sessions"), or a rule to change.
+3. **Route the lesson — and it can go to more than one place.** A lesson usually has
+   more than one face: something true about *the user* and, at the same time, a rule the
+   *artifact* must now follow. Send it to every destination that fits, not just the
+   first one you think of:
+   - **A behavioral rule the shipped artifact must follow → edit the artifact itself**
+     (its `SKILL.md`, subagent file, hook config, MCP setup). This is the destination
+     that gets missed. If the lesson is "the tool should always do X" or "never do Y,"
+     it belongs in *the thing that runs*, not only in a memory about how you'd handle
+     it. A lesson that changes how the *tool* should behave but leaves the tool's own
+     instructions unchanged did not land — it evaporated into a note.
+   - **A durable fact about how the user works → a memory** (the persistent user model).
+   - **A pattern about the Boots pipeline itself → a `boots-*` skill edit**, or a note
+     for `boots-retire`.
+   - **A system-specific note → the system's own log.**
+
+   **The dual-nature check, out loud, every time:** "Is this also a rule the artifact
+   must obey?" If yes, the artifact edit is *mandatory* even after you've written the
+   memory. Writing only the memory for a lesson that is also about the tool is the
+   exact miss this step exists to prevent: it teaches *you*, not the tool, and the tool
+   repeats the mistake for the next person who runs it.
+4. Update the system model so it reflects the lesson **and names where each part of it
+   went** (artifact / memory / pipeline / log), not just that the ship happened.
+
+## Write back
+
+```markdown
+## log
+- <date> extract, lesson: <the one thing this taught, and where it went>
+```
+
+## The rule
+
+This is Move 7. The test is whether the **artifact**, the user model, and the pipeline
+are meaningfully different a month from now than today. A lesson that changes how the
+*tool* should behave but never touches the tool did not flow back — it evaporated into
+a note that teaches you and not the thing that runs. If nothing ever changes the
+artifact, the memory, or a skill, extract is not running. One real lesson that lands in
+the thing that runs beats a tidy summary.

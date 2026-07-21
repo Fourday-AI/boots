@@ -1,0 +1,132 @@
+---
+name: boots-ship
+description: >
+  Boots closer, stage 3 of 3. Produce the finished, usable form for a verified AI
+  system — invocable skill, registered subagent, connectable MCP server, runnable
+  app, wired hook — and mark it done, so the system stops being a thread you carry
+  and becomes a thing you have. Use when a system passed verify and the user says
+  "ship it", "finish it", "boots-ship", or a system reaches stage: ship.
+preamble-tier: 1
+---
+
+{{PREAMBLE}}
+
+# Boots ship (closer 3 of 3)
+
+Ship is the last closer stage. Review found the gaps, verify proved it runs, ship
+turns it into the finished thing and closes the system. After ship, the system is
+no longer in flight. That transition, from carrying it to having it, is the whole
+point of Boots.
+
+To the user this is just **"turning it into something you can use whenever, and
+calling it done"** — never "ship", "the closer", or "the artifact". The one thing
+they need from you here is dead simple: what it is now, and exactly how to use it
+next time ("just say 'grade these applicants' and point me at the folder").
+
+Follow all the rules in `boots/SKILL.md` — "How Boots talks": tell the user in the
+chat, in plain words, where the finished thing lives and how they use it.
+
+## Input
+
+A system at `state/systems/<slug>/system.md` with `stage: ship` and a `form:`,
+meaning it already passed verify with real evidence. If it has not passed verify,
+stop and send it back. Ship assumes verify succeeded, it does not re-run it.
+
+## What you do
+
+1. **Produce the usable form.** Verify proved the machinery works; ship makes it
+   something someone actually uses. Read the palette for this system's platform,
+   `.claude/skills/boots/forms/<platform>.md` (default `claude-code.md`), section
+   "What shipped means per form". Confirm the form is not just present but live:
+   - **skill / subagent / command** → in place and invocable, it triggers and runs
+   - **hook** → wired in settings and confirmed firing
+   - **MCP server** → connectable, its tools appear and answer
+   - **Agent SDK app** → runnable with one documented command
+   - **script / CLI** → invocable from its entry point (a toolkit feature shows in
+     `python -m toolkit`)
+   - **document** → the final file in its resting place, and something reads it
+2. **Heal the artifact against the gaps verify surfaced (self-healing). Do this
+   before you close anything.** Verify recorded an `artifact_gaps:` list — everything
+   the operator had to do by hand that the artifact should do itself. This step is the
+   difference between shipping *a tool* and shipping *a tool plus a human who knows its
+   tricks*; only the first is real. Go through the list and for each gap, do one of two
+   things, out loud:
+   - **Encode it into the artifact** so the tool does it unaided next time — a new rule
+     in the skill body, an added step, a forbidden-shortcut line ("never grade from a
+     description; if the browser isn't connected, stop and get it connected"), a check.
+     It goes into *the thing that runs* — not the system log, not a memory, not your
+     chat summary. If the fix is "the tool should always X" or "never Y," and X/Y isn't
+     written in the artifact, you have not healed it.
+   - **Or defer it explicitly**, in one line, with the reason (genuinely out of scope,
+     needs a capability that doesn't exist yet). A deferred gap is a decision on the
+     record, not a thing you dropped.
+   You may not close the system with an un-triaged gap. If verify's list was `none`,
+   say so and move on. **A lesson that lands only in a memory or the chat, when it was
+   a rule the tool must obey, is the failure this step exists to stop.**
+3. **Check nothing shipping carries a secret.** Ship is the moment files become
+   permanent in git history, so run the same sweep review ran, one last time,
+   over everything being committed: no key or token literals, configs hold
+   `${VAR}` expansions, session URLs live outside git. If the system uses a
+   hosted connection, confirm it is registered at a scope that keeps the
+   credential out of git and the connected account is still `ACTIVE`. A secret
+   found here blocks the ship until it is moved out and rotated.
+4. **Record status where the system's model lives.** If this is a loose-end-backed
+   system in a feature-toolkit repo, advance the record so the graveyard reflects
+   it, otherwise skip this, it is optional:
+   ```bash
+   PY=.venv/bin/python; [ -x "$PY" ] || PY=python3
+   $PY -m toolkit records set-status <id> resumed 2>/dev/null || true
+   ```
+5. **Close the system file:**
+   ```markdown
+   status: shipped
+   stage: ship
+   next_step: none, shipped <date>
+
+   ## now
+   last worked: <date>, this chat
+   reality: shipped — <where the finished artifact lives and how it's invoked>
+   you are here: done; usable whenever you want
+   next physical action: none — use it, or run boots-extract for what it taught
+
+   ## log
+   - <date> ship, shipped <form>: <where the finished artifact lives and how it's used>
+   ```
+
+## Offer what it could grow into (don't push)
+
+A shipped system that gets used is the seed of something bigger, and the user rarely
+sees the next rung on their own. Once it's working, name the natural extensions in
+plain English as an *offer*, not homework — pick only the ones that actually fit this
+system, and only if it earned it by working:
+
+- **Run it on a schedule** — "want this to run itself every morning and have a draft
+  waiting?" (a scheduled job / cron, so it stops needing you to kick it off).
+- **Chain it with a related one** — if the user has other shipped systems that share
+  an input, offer to wire them into one command ("one link in → the post, the
+  newsletter, and the summary out, in one go").
+- **Stop it repeating work** — if it runs on a stream of similar things, offer a
+  little tracking list so it skips what it already did.
+- **Hand it to someone else** — if a teammate could use it, offer to package it so
+  they get the user's taste and process without the user in the loop.
+
+Keep this to one or two that genuinely fit, as a decision brief. Do not list all four
+at every ship. The point is that finishing one system opens the door to a bigger one,
+and Boots is the thing that notices.
+
+## Then hand to extract
+
+A shipped system is the trigger for `boots-extract`. Tell the user plainly that it's
+done and usable, then offer the next step in their words: **"Want me to jot down what
+we learned building this, so the next one goes smoother?"** as a decision brief
+(`Yes (recommended) / Not now / Something else`). Do not say "run extract" or "pull
+the lesson". Do not auto-run it. On a yes, invoke `boots-extract`.
+
+## The rule
+
+Ship means done and used, not done and filed. If the artifact exists but nobody
+can invoke, connect to, or read it, it is not shipped, it is another abandoned
+thread with a nicer folder.
+
+
+{{FUNNEL_EMIT:ship:shipped}}

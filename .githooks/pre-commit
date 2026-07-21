@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# Boots freshness gate — refuse a commit where a generated SKILL.md is out of
+# sync with its SKILL.md.tmpl. Mirrors gstack's CI dry-run check so a template
+# and its output can never diverge. Enable once per clone:
+#   git config core.hooksPath .githooks
+#
+# No-op when bun is absent (generated files are committed, so a bun-less
+# contributor can still commit; they just can't regenerate).
+set -euo pipefail
+
+command -v bun >/dev/null 2>&1 || exit 0
+[ -f package.json ] || exit 0
+
+if ! bun run gen:skill-docs:check >/tmp/boots-freshness.$$  2>&1; then
+  echo "✗ SKILL.md is stale — a template changed but its SKILL.md wasn't regenerated." >&2
+  grep -E '^STALE:' /tmp/boots-freshness.$$ >&2 || true
+  echo "  Run: bun run gen:skill-docs   then re-stage the generated SKILL.md files." >&2
+  rm -f /tmp/boots-freshness.$$
+  exit 1
+fi
+rm -f /tmp/boots-freshness.$$
+exit 0

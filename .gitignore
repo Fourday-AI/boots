@@ -1,0 +1,13 @@
+# Dependencies
+node_modules/
+
+# Generated external-host skill docs (bun run gen:skill-docs --host <name>)
+.agents/
+.codex/
+
+# Per-repo Boots state — private session details, system records, archives.
+# Never commit; each user's Boots keeps its own under state/ in their project.
+state/
+
+# Local project instructions
+CLAUDE.md
