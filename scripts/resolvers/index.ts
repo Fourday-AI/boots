@@ -16,6 +16,9 @@ export const RESOLVERS: Record<string, ResolverValue> = {
   FUNNEL_EMIT: generateFunnelEmit,
   FUNNEL_ROLLUP: generateFunnelRollup,
   BIN_DIR: (ctx) => ctx.paths.binDir,
+  // The boots skill's own dir (holds bin/, forms/, examples/) — for skills that
+  // read a bundled resource like the first-run example.
+  SKILL_DIR: (ctx) => ctx.paths.skillDir,
   // Where a system's records live — the global Boots home, not a repo. Skills
   // reference `{{SYSTEMS_DIR}}/<slug>/...` so the path is defined once here and
   // stays in lockstep with the bin scripts' runtime default (~/.boots/systems).

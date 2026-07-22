@@ -141,20 +141,34 @@ A system at `~/.boots/systems/<slug>/system.md` with `stage: scope` and a
    - runs unattended, outside a chat → Agent SDK app
    - makes every future session smarter → document / context
 
-   **When the work needs an outside app, check for a ready-made connection before
-   deciding to build one.** If the capability is a mainstream SaaS app (email, a
-   calendar, Slack, a CRM, GitHub), a hosted provider almost certainly covers it —
-   Composio is the named default (see "Connect before you build" in the palette).
-   Put it to the user as its own plain-English decision brief: **"a ready-made
-   connection that handles the login for you"** (recommended when the app is
-   covered) vs **"we build our own connection"** (the wrong fit unless the API is
-   niche, internal, or self-hosted). **Keep the word "Composio" out of the option
-   the user taps.** It is a provider name they never chose and have never heard of;
-   dropping it bare into a question is exactly the bug that confused the last user.
-   If the name has to appear here at all, gloss it in the same breath — what it is
-   (the service behind that ready-made connection) and how it'll work for them (they
-   connect their Gmail through it once, it handles the login, the system only reads);
-   see the translation table in `boots/SKILL.md`. Then record exactly which apps and which
+   **When the work needs an outside app, look for a ready-made connection before
+   deciding to build one — and check your own host's marketplace first, a
+   third-party provider only after.** The order is a ladder; the palette's "Connect
+   before you build" section carries the concrete steps for this host:
+   1. **Look at the integrations available in your own public marketplace** — the
+      first-party and official connectors your tool ships. If one covers the app,
+      that's the route: an official connector is more trustworthy than a third-party
+      middleman, and it spares the user a second account to sign up for. Record the
+      app as connecting **via marketplace**.
+   2. **Only if the marketplace comes up empty** for that app, fall back to a hosted
+      provider (the named default; see the palette). Record it **via hosted**.
+   3. Build a **custom** connection only when the API is niche, internal, or
+      self-hosted — the same reason you'd write any code a library already covers.
+
+   To the user this is one plain-English decision either way, because rungs 1 and 2
+   present identically: **"a ready-made connection that handles the login for you"**
+   (recommended when the app is covered) vs **"we build our own connection"** (the
+   wrong fit unless the API is niche, internal, or self-hosted). Which ready-made
+   route you took — marketplace or hosted — you resolve silently; the user need not
+   hear a provider name to tap the option. **Keep any provider name out of the option
+   the user taps.** A name like "Composio" is one they never chose and have never
+   heard of; dropping it bare into a question is exactly the bug that confused the
+   last user — and on the marketplace route it need never appear at all. If a real
+   product name does have to surface (only the hosted fallback forces it, at setup),
+   gloss it in the same breath — what it is (the service behind that ready-made
+   connection) and how it'll work for them (they connect their Gmail through it once,
+   it handles the login, the system only reads); see the translation table in
+   `boots/SKILL.md`. Then record exactly which apps and which
    specific actions the system needs (fetch emails yes, send emails no) — that
    list is what keeps the connection least-privilege at build. Default it to
    read-only actions; anything outward-acting (send an email, post a message,
@@ -263,7 +277,7 @@ out:
 inputs (what feeds it, for the test fixtures build will stage):
 - <the widest plausible real inputs, e.g. CV + cover letter + portfolio link + Instagram>
 integrations (outside apps it connects to; "none" if it stays local):
-- <app> via <hosted (Composio) | custom> — tools: <the specific actions, e.g. GMAIL_FETCH_EMAILS>
+- <app> via <marketplace (host's own connector) | hosted (Composio) | custom> — tools: <the specific actions, e.g. GMAIL_FETCH_EMAILS>
 reference notes (what it must know to be good; build drafts each, user corrects):
 - <e.g. what this founder values in a hire; 2-3 past hires they rated — or "none" if a pure transform>
 

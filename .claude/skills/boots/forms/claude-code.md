@@ -44,12 +44,29 @@ easier to check. Fix the verification instead.
 
 ## Connect before you build (integrations)
 
-Before building any capability, check whether a hosted provider already exposes it
-as MCP tools. The named default is **Composio** (composio.dev): 800+ SaaS toolkits
+Before building any capability, check whether a connection already exposes it as
+MCP tools — and check in this order. Don't reach for a third-party provider first.
+
+**1. Look at the integrations available in your own public marketplace.** Claude
+Code ships a marketplace of first-party and official connectors — the same set you'd
+browse to add any integration (the `/mcp` menu, the connector/plugin marketplace,
+`claude mcp` listings). Ask the question of yourself — "look at the integrations I
+have available in my public marketplace" — and run that check with whatever your host
+gives you; there's no separate program and no list Boots maintains. If an official
+connector covers the app the system needs, connect through that: it's first-party
+(more trusted than a middleman) and it needs no second account from the user. Record
+the app in the system file as connecting **via marketplace**, and log which connector
+you used and to which account. This is the default whenever the marketplace has the app.
+
+**2. Only if the marketplace comes up empty for that app, fall back to a hosted
+provider.** The named default is **Composio** (composio.dev): 800+ SaaS toolkits
 (Gmail, Slack, Notion, GitHub, HubSpot, calendars, CRMs) with managed OAuth, so
-"read the user's inbox" is a connection, not a build. Write a custom MCP server
-only when the API is niche, internal, or self-hosted — the same reason you'd write
-any code a library already covers.
+"read the user's inbox" is a connection, not a build. Everything below in this
+section — scoped sessions, `composio login`, the secret discipline — is the hosted
+route.
+
+**3. Write a custom MCP server** only when the API is niche, internal, or
+self-hosted — the same reason you'd write any code a library already covers.
 
 Both routes start from a **scoped session**, never the broad endpoint, because
 everything running inside a Claude Code session inherits every MCP server that

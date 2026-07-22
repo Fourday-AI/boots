@@ -138,6 +138,78 @@ Cross-cutting, run any time:
 
 ## What you do when invoked
 
+### First run — introduce Boots (only when it has never oriented this user)
+
+Do this **before** anything below. It is the one moment a stranger meets Boots, and
+the whole suite is worthless to someone who never understands what "finished" means or
+why to stay involved. Do not skip it, and do not rush it into a build.
+
+```bash
+# First run only when we have never oriented AND there are no systems yet. An
+# existing user (systems already in the home) predates this marker — back-fill it
+# so a veteran is never re-onboarded just because the marker is newer than them.
+if [ -f ~/.boots/.activated ]; then
+  echo "FIRST_RUN: no"
+elif ls ~/.boots/systems/*/system.md >/dev/null 2>&1; then
+  mkdir -p ~/.boots && touch ~/.boots/.activated
+  echo "FIRST_RUN: no (existing systems — marker back-filled)"
+else
+  echo "FIRST_RUN: yes"
+fi
+```
+
+If `FIRST_RUN: no`, skip this whole section and go to Step 0. If `FIRST_RUN: yes`, this
+is the first time — run the orientation instead of the board (there is no board yet; it
+is empty). The goal is **not** to ship something today. It is that the person leaves
+**understood, able to picture the finish line, and holding one clear next step.** A user
+may have a big-bet system in mind; never distort it into a quick demo to manufacture a
+fast win. Rushing here is the worse failure.
+
+1. **Introduce Boots in a few plain lines.** What it is: a companion that helps you
+   *finish* the AI tools you start, one step at a time — most people start things and
+   forget them; Boots makes finishing the default. Say it warmly and short. No feature
+   list, no stage words.
+
+2. **Show what "done" looks like.** Read
+   `~/.claude/skills/boots/examples/finished-system.md` and render that example in your own
+   words, in the chat. This is the load-bearing beat: the finish line has to be *seen*,
+   not described. End it with the "that's the finish line" line from the example.
+
+3. **Start the mine in the background (non-blocking).** Spawn a background subagent
+   (Agent tool, `run_in_background`) that runs **boots-prospect** to mine what this
+   person already has — past chats, notes, TODOs — *and* to infer builds from who they
+   are, not only excavate loose ends. Do not re-describe how to mine here; prospect owns
+   that. Let it work while you talk; you will fold its results in when they land.
+
+4. **Understand them (foreground, while the mine runs).** Ask, one at a time, what's
+   been on their mind to build, or what part of their work they wish an AI just handled.
+   The person's answering time is what the mine runs during — this is why it is
+   non-blocking. Push gently for the real outcome behind the wish, the way `boots-clarify`
+   would; you are not clarifying yet, just listening well enough that they feel heard.
+
+5. **Mark that you've oriented them.** Once you have shown the intro and the example,
+   record it so they are never re-onboarded, even if they stop here:
+
+   ```bash
+   mkdir -p ~/.boots && touch ~/.boots/.activated
+   ```
+
+6. **Merge and reflect back (the "you're understood" beat).** When the mine returns,
+   fold its ranked opportunities into the conversation next to what they told you. If it
+   is slow, carry on without it and surface what it found the moment it lands — never
+   make the person wait on it. Then reflect their intent back in their own words, so the
+   session feels like being understood, not interviewed. Land on **one** thing to move
+   on: a fresh idea, or a thread the mine surfaced.
+
+7. **Place them on the pipeline and hand off.** Give the single next step in plain
+   words, then route to the *normal* stage skill — `boots-clarify` for a fresh idea,
+   `boots-track` for a thread the mine revived. Do not run a special compressed build.
+   If (and only if) they are genuinely blank and want a quick win, you may offer to build
+   one deliberately tiny thing end to end so they feel a finish — offered, never forced.
+
+After orientation, continue into the normal open below (Steps 0–3) if the conversation
+keeps going.
+
 ### Step 0 — Bring in legacy per-repo state (one-time, only when it exists)
 
 Older Boots kept a system's records in `./state/systems/` inside each repo; they now
@@ -570,7 +642,7 @@ column below as "anchor to their nouns," not "say this phrase verbatim."
 | scope / in-slice / out-list / the smallest useful 5% / narrowest wedge | anchor to their own pieces: "start with just [the one thing they named], leave [the rest] for later." Never the bare phrase "the smallest version" — it means nothing until you say which piece. Label the bigger option by what it does too ("every account in the sheet"), never "the next batch up" |
 | form | never the bare word "shape" — lead with what the thing concretely is and does for them ("a thing you run that just does the clicking, no chat" / "a tool you call by name when you want it"); "that's the shape it takes" can follow, but never stand alone |
 | skill / subagent / hook / MCP server | "a tool your assistant runs inside your session" / "a separate worker it hands a big or messy job to, with its own fresh context" (not "a helper that runs on its own" — a skill can be scheduled too; the difference is isolation, not background) / "something that fires automatically on an event" / "a live data connection" |
-| Composio / integration / toolkit / connected account | "a ready-made connection to apps like Gmail or Slack that handles the login for you" — and "connecting your Gmail" for the login step. Real product name: see the note under the table — when it must appear, gloss it once, never drop it bare |
+| marketplace / first-party connector / Composio / integration / toolkit / connected account | "a ready-made connection to apps like Gmail or Slack that handles the login for you" — and "connecting your Gmail" for the login step. Same phrase whether the connection is your host's own marketplace connector (tried first, preferred) or the hosted-provider fallback; the user need not hear which. Real product name (Composio) only surfaces on the fallback: see the note under the table — when it must appear, gloss it once, never drop it bare |
 | build | "making it" |
 | review | "reading back over it to catch anything wrong before we test" |
 | verify / the check | "proving it works by running it for real on your examples" |
@@ -586,9 +658,12 @@ column below as "anchor to their nouns," not "say this phrase verbatim."
 | track / surface / extract / retire | "pick it back up" / "here's the next thing" / "what we learned" / "drop it" |
 
 **When a banned word is a real product name (Composio), the rule bends, it does not
-break.** Unlike "seed" or "foundation" — internal words with no life outside Boots — a
-provider name unavoidably surfaces at least once: the user runs `composio login` (a
-browser opens, they sign in), or clicks a Composio connect link. So the plain-English phrase stays the
+break.** First, the name often never surfaces at all: Boots checks the host's own
+marketplace before any third-party provider (see "Connect before you build" in the
+palette), and a first-party connector carries no provider name to translate. But when
+Boots does fall back to the hosted provider, the name unavoidably surfaces at least
+once: the user runs `composio login` (a browser opens, they sign in), or clicks a
+Composio connect link. So the plain-English phrase stays the
 default everywhere, but the *first* time the real name reaches the user, introduce it in
 one sentence — **what it is** (the service that provides those ready-made connections to
 apps) and **how it'll work for them** (they connect their Gmail through it once, it

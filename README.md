@@ -1,3 +1,14 @@
+<!--
+  DRAFT README — mirrors the Paperclip structure for eventual open-sourcing.
+  Fill the [TODO] placeholders before going public:
+    - banner image at docs/assets/banner.png ✓ added
+    - real GitHub org/repo slug (currently: Fourday-AI/boots)
+    - social links (Discord / X / site) — delete the ones you don't want
+    - license choice (MIT assumed below)
+    - a demo video/gif
+  Nothing here is published until you `git remote add` + `git push`.
+-->
+
 <p align="center">
   <img src="docs/assets/banner.png" alt="Boots — finish what you start. A build-and-close pipeline for Claude Code." width="720" />
 </p>

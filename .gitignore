@@ -1,13 +1,36 @@
-# Dependencies
-node_modules/
+# macOS
+.DS_Store
 
-# Generated external-host skill docs (bun run gen:skill-docs --host <name>)
+# Archives / bundles (not source)
+*.zip
+
+# Private runtime — boots session state (interviews, systems, archives).
+# Holds summaries of private AI sessions; never commit. Mirrors the
+# state/ convention in the ai-coach-v0 product repo.
+/state/
+
+# Secrets — API keys and scoped session URLs for hosted integrations
+# (Composio). Configs reference these via ${VAR} expansion, never literals.
+.env
+.env.*
+
+# Boots connection state (contains ids; keep out of git)
+.connection.local.json
+state/systems/*/.connection.local.json
+# reply-guard private ntfy topic (a push credential — keep out of git)
+state/systems/reply-guard/.ntfy-topic
+state/systems/reply-guard/output/launchd.log
+
+# generated external-host skill docs (bun run gen:skill-docs --host <name>)
 .agents/
 .codex/
+node_modules/
 
-# Per-repo Boots state — private session details, system records, archives.
-# Never commit; each user's Boots keeps its own under state/ in their project.
-state/
-
-# Local project instructions
+# Claude.md file
 CLAUDE.md
+
+# Eval corpus — RAW session transcripts contain real client PII (names, account
+# numbers, balances from live sessions). Never commit. The distilled, redacted
+# eval CASES under evals/cases/ are safe and ARE committed.
+/evals/transcripts/
+state/systems/reply-guard/.seen.json

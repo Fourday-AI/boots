@@ -195,14 +195,27 @@ section naming the in-scope slice, a `form:` line, and a `target:`.
      the person running it."* This is what turns one build into something that compounds
      **on its own**, instead of compounding only in the head of whoever runs it.
 6. **Wire any outside connections scope named — you do the setup, the user only
-   clicks the login link.** If the scope's integrations list names a hosted
-   connection (Composio), set it up now, by the route that fits the form (see
-   "Connect before you build" in the palette): register the MCP endpoint in the
-   Claude Code config for a skill, subagent, command, or hook; create a scoped
-   SDK session and pass its MCP URL into the app for an Agent SDK app or script.
-   Enable only the specific tools scope listed, never the whole toolkit.
+   clicks the login link.** Follow the connection ladder from the palette's
+   "Connect before you build" section, in order — marketplace first, hosted only
+   after.
 
-   **First get the user logged in — a browser, not a key.** If they are not already
+   **First, the marketplace route.** If scope recorded the app as **via marketplace**
+   (or the app is a mainstream one and scope left the route open), look at the
+   integrations available in your own public marketplace and, if the connector is
+   there, wire the system through it — a first-party connector, no extra account for
+   the user to create. Log that the system uses the marketplace connection (which
+   connector, which account) in the system file. Prefer this whenever the marketplace
+   covers the app; only when it comes up empty do you drop to the hosted route below.
+
+   **Fall back to a hosted connection only when the marketplace has nothing.** If the
+   scope's integrations list names a hosted connection (Composio), set it up now, by
+   the route that fits the form (see "Connect before you build" in the palette):
+   register the MCP endpoint in the Claude Code config for a skill, subagent, command,
+   or hook; create a scoped SDK session and pass its MCP URL into the app for an Agent
+   SDK app or script. Enable only the specific tools scope listed, never the whole
+   toolkit. The login and secrets steps that follow are the hosted route's:
+
+   **For the hosted route, first get the user logged in — a browser, not a key.** If they are not already
    logged into Composio, run `composio login`: a browser opens, they sign in, and the
    key is stored in the OS keyring (macOS Keychain). They never type or paste a key,
    and it never enters the chat. Say it in plain words — "a browser will open, sign

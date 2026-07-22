@@ -122,4 +122,7 @@ boots-ship, boots-prospect, boots-track, boots-surface, boots-extract, boots-ret
 Boots keeps its notes in ~/.boots/systems/ (your machine, private, out of any repo), so
 your systems are there no matter which project you're in. To see one, just ask Boots —
 it reads the record and opens what it built for you.
+First run: if `~/.boots/.activated` does not exist yet, open the session by running
+Boots — the person just installed it and may not know to ask. Boots introduces itself
+and shows what a finished system looks like before anything else.
 BLOCK
