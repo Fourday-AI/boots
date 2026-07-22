@@ -26,7 +26,7 @@ do not end with only a path.
 
 ## Input
 
-A system at `state/systems/<slug>/system.md` with `stage: build`, a `## scope`
+A system at `{{SYSTEMS_DIR}}/<slug>/system.md` with `stage: build`, a `## scope`
 section naming the in-scope slice, a `form:` line, and a `target:`.
 
 ## What you do
@@ -112,7 +112,7 @@ section naming the in-scope slice, a `form:` line, and a `target:`.
      `.claude/skills/<name>/reference/taste.md`." The notes live *inside* the artifact
      (step 3), so they travel with it; never point across into `state/`. A bare
      `reference/…` won't resolve at run time (the cwd isn't the skill dir), and a
-     `state/systems/<slug>/…` path silently breaks the moment someone copies the skill
+     `{{SYSTEMS_DIR}}/<slug>/…` path silently breaks the moment someone copies the skill
      without the scaffolding — that split is the exact failure this avoids.
    - **Bake in self-improvement, and cover both kinds of lesson.** For a skill or
      subagent, add a standing rule so it keeps getting better as it's used. It must
@@ -175,10 +175,10 @@ section naming the in-scope slice, a `form:` line, and a `target:`.
    fixtures folder now and drop a short README naming exactly what goes there, using
    the open-ended input set scope predicted:
    ```bash
-   mkdir -p state/systems/<slug>/inputs
-   pwd   # resolve the ABSOLUTE path so you can tell the user how to find the folder
+   mkdir -p {{SYSTEMS_DIR}}/<slug>/inputs
+   echo {{SYSTEMS_DIR}}/<slug>/inputs   # the ABSOLUTE path (~ expands) to tell the user how to find the folder
    ```
-   Write `state/systems/<slug>/inputs/README.md` — this is the one surface the user
+   Write `{{SYSTEMS_DIR}}/<slug>/inputs/README.md` — this is the one surface the user
    actually sees once they're standing in the folder, so it says both **what to drop
    in** and **what the tool does with it** (mirror the flow sentence from the chat, so
    it's reinforced right where they are). E.g. "Drop each applicant's CV, cover letter,
@@ -192,7 +192,7 @@ section naming the in-scope slice, a `form:` line, and a `target:`.
    matter and where the results land:
 
    > "I made a folder on your computer for the examples. To find it: in Finder press
-   > **⌘⇧G**, paste `<abs>/state/systems/<slug>/inputs`, and hit enter (or just ask me
+   > **⌘⇧G**, paste `{{SYSTEMS_DIR}}/<slug>/inputs`, and hit enter (or just ask me
    > to open it). Drop 2-3 real examples in there — your spreadsheet, a couple of CVs,
    > whatever this tool reads. **Here's how it works:** the tool reads whatever's in
    > that folder each time it runs, so that's where it gets your real data; when it
@@ -200,7 +200,7 @@ section naming the in-scope slice, a `form:` line, and a `target:`.
    > the results here in the chat]. Tell me when your files are in and I'll test it for
    > real."
 
-   Do NOT just hand them the `state/systems/<slug>/inputs/` path with no way to find it
+   Do NOT just hand them the `{{SYSTEMS_DIR}}/<slug>/inputs/` path with no way to find it
    and no picture of what the drop does — that bare path is exactly the instruction a
    nontechnical user can't act on; they'll drop the file somewhere random and stall.
    The user should leave knowing where the folder is, what the tool does with what they

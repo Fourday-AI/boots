@@ -110,7 +110,7 @@ Read-only. Prospect **finds**; `boots-track` does the promoting and the writing.
 2. **Mine each present source** (read-only) using its adapter's `read:` step. Each
    raw hit becomes a candidate in the common shape from `sources.md`: *what it is,
    where it came from (a real quote / path / record id), why it might matter.*
-3. **Dedupe against the pipeline.** Read `state/systems/*/system.md` and drop any
+3. **Dedupe against the pipeline.** Read `~/.boots/systems/*/system.md` and drop any
    candidate that is already a tracked system. Prospect surfaces **untracked** work;
    never re-surface something already in flight.
 4. **Rank by value-if-finished** — the same instinct `boots-surface` uses. What

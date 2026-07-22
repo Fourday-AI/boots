@@ -119,6 +119,7 @@ tells you the single next step on whatever you're building — or just say what 
 to build and it walks you from a fuzzy idea to a finished tool.
 Skills: boots, boots-clarify, boots-scope, boots-build, boots-review, boots-verify,
 boots-ship, boots-prospect, boots-track, boots-surface, boots-extract, boots-retire.
-Boots keeps its notes under state/systems/ in this project — keep that folder out of
-git, since it can hold private session details.
+Boots keeps its notes in ~/.boots/systems/ (your machine, private, out of any repo), so
+your systems are there no matter which project you're in. To see one, just ask Boots —
+it reads the record and opens what it built for you.
 BLOCK

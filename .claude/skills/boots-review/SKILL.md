@@ -96,7 +96,7 @@ the chat, ranked, not just in the file.
 
 ## Input
 
-A system at `state/systems/<slug>/system.md` with `stage: review`, a `form:`, and
+A system at `~/.boots/systems/<slug>/system.md` with `stage: review`, a `form:`, and
 an `## artifact` section pointing at what was made. Read the system file, then read
 the artifact itself.
 
@@ -121,7 +121,7 @@ the artifact itself.
    - **document** → is it true, will a fresh session actually behave differently
 3. **Check it against its own foundation and scope.** Does the artifact do what was
    scoped, in the form scope chose? Did it grow past scope or fall short?
-4. **Sweep for leaked secrets.** Grep the artifact and `state/systems/<slug>/` for
+4. **Sweep for leaked secrets.** Grep the artifact and `~/.boots/systems/<slug>/` for
    anything that looks like a key or bearer credential: a `COMPOSIO_API_KEY`
    literal, a `connect.composio.dev` or session MCP URL written out in full, any
    long token sitting where a `${VAR}` expansion should be. The master key belongs
@@ -198,4 +198,4 @@ When you move this system to its next stage, record it so the board and `boots-s
 ~/.claude/skills/boots/bin/boots-event --system "<slug>" --event transition --from "<the stage the record was actually at before you moved it>" --to review --outcome advanced 2>/dev/null || true
 ```
 
-Fill every `<...>` from the record you just read — the folder slug under `state/systems/`, and the real stages (not an assumed linear step: use the stage the record was actually at). If the user stalled rather than moved forward, change `--outcome` to `blocked`; if they walked away from it, `abandoned`.
+Fill every `<...>` from the record you just read — the folder slug under `~/.boots/systems/`, and the real stages (not an assumed linear step: use the stage the record was actually at). If the user stalled rather than moved forward, change `--outcome` to `blocked`; if they walked away from it, `abandoned`.

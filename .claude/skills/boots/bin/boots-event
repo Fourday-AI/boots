@@ -5,9 +5,11 @@
 # STAGE, event-sourced next to the prose log each stage already writes. This is
 # the source of truth the router/surface roll up into "where do systems stall".
 #
-# Events live IN-REPO with the work (state/systems/<slug>/events.jsonl), because
-# they are the user's data and travel with the project. A stage skill calls this
-# once, at its transition, after it writes its session log.
+# Events live in the global Boots home (~/.boots/systems/<slug>/events.jsonl),
+# alongside the system's record — NOT per-repo. A system is the user's work and
+# must be findable from any directory, so its records have one stable home
+# regardless of where the user is standing. A stage skill calls this once, at its
+# transition, after it writes its session log. Override the home with BOOTS_HOME.
 #
 # Usage:
 #   boots-event --system <slug> --event transition --from <stage> --to <stage> \
@@ -16,13 +18,14 @@
 #   boots-event --system <slug> --event created  --to clarify
 #   boots-event --system <slug> --event shipped  --from verify --to ship --outcome advanced
 #
-# Runs from the repo root (where state/systems/ lives). Never fails a skill:
-# telemetry gating is checked, but the local funnel is written regardless of the
-# remote tier — it powers local dashboards even with telemetry off. Set
+# Writes to the global Boots home (~/.boots), findable from anywhere. Never fails
+# a skill: telemetry gating is checked, but the local funnel is written regardless
+# of the remote tier — it powers local dashboards even with telemetry off. Set
 # BOOTS_FUNNEL=off to suppress even the local write.
 set -uo pipefail
 
 STATE_DIR="${BOOTS_HOME:-$HOME/.boots}"
+SYSTEMS_DIR="$STATE_DIR/systems"
 BIN_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 SYSTEM="" EVENT="transition" FROM="" TO="" OUTCOME="advanced" FORM="" PLATFORM="claude-code" SESSION_ID=""
@@ -53,8 +56,8 @@ SYSTEM="$(jsafe "$SYSTEM")"; FROM="$(jsafe "$FROM")"; TO="$(jsafe "$TO")"
 FORM="$(jsafe "$FORM")"; PLATFORM="$(jsafe "$PLATFORM")"; SESSION_ID="$(jsafe "$SESSION_ID")"
 
 TS="$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || echo "")"
-EVENTS_FILE="state/systems/$SYSTEM/events.jsonl"
-mkdir -p "state/systems/$SYSTEM" 2>/dev/null || true
+EVENTS_FILE="$SYSTEMS_DIR/$SYSTEM/events.jsonl"
+mkdir -p "$SYSTEMS_DIR/$SYSTEM" 2>/dev/null || true
 
 # null-able JSON fields
 from_field="null"; [ -n "$FROM" ] && from_field="\"$FROM\""

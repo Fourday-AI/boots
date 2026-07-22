@@ -37,7 +37,7 @@ silent-wrong answer — green process, wrong result — is the failure this skil
 
 ## Input
 
-Every system at `state/systems/<slug>/system.md` with `status: shipped`. Each shipped system
+Every system at `{{SYSTEMS_DIR}}/<slug>/system.md` with `status: shipped`. Each shipped system
 should carry a `## health checks` section declaring how to probe *it* specifically (its
 liveness command, what a sane output looks like for it, what "used" means). **Read and use
 that section** — it holds the system-specific detail so this skill can stay general. If a

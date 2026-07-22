@@ -114,7 +114,7 @@ you don't need the full scan — take that one.
    attempt 4" is not the system's name; what it was reaching for is:
 
    ```bash
-   mkdir -p state/systems/<slug>
+   mkdir -p ~/.boots/systems/<slug>
    ```
 
    ```markdown
@@ -158,4 +158,4 @@ When you create this system's record, record it so the board and `boots-surface`
 ~/.claude/skills/boots/bin/boots-event --system "<slug>" --event created --to "<the stage you set on the record>" --outcome advanced 2>/dev/null || true
 ```
 
-Fill every `<...>` from the record you just read — the folder slug under `state/systems/`, and the real stages (not an assumed linear step: use the stage the record was actually at). If the user stalled rather than moved forward, change `--outcome` to `blocked`; if they walked away from it, `abandoned`.
+Fill every `<...>` from the record you just read — the folder slug under `~/.boots/systems/`, and the real stages (not an assumed linear step: use the stage the record was actually at). If the user stalled rather than moved forward, change `--outcome` to `blocked`; if they walked away from it, `abandoned`.

@@ -108,7 +108,7 @@ vocabulary or the raw output.
 
 1. **Find the cold and the overridden:**
    ```bash
-   ls -lt state/systems/*/system.md 2>/dev/null
+   ls -lt ~/.boots/systems/*/system.md 2>/dev/null
    PY=.venv/bin/python; [ -x "$PY" ] || PY=python3
    $PY -m toolkit records summary 2>/dev/null || true
    ```
@@ -143,4 +143,4 @@ When you retire this system, record it so the board and `boots-surface` can see 
 ~/.claude/skills/boots/bin/boots-event --system "<slug>" --event retired --from "<the stage the record was actually at before you moved it>" --to retired --outcome abandoned 2>/dev/null || true
 ```
 
-Fill every `<...>` from the record you just read — the folder slug under `state/systems/`, and the real stages (not an assumed linear step: use the stage the record was actually at). If the user stalled rather than moved forward, change `--outcome` to `blocked`; if they walked away from it, `abandoned`.
+Fill every `<...>` from the record you just read — the folder slug under `~/.boots/systems/`, and the real stages (not an assumed linear step: use the stage the record was actually at). If the user stalled rather than moved forward, change `--outcome` to `blocked`; if they walked away from it, `abandoned`.

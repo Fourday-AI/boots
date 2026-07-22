@@ -93,7 +93,7 @@ chat, in plain words, where the finished thing lives and how they use it.
 
 ## Input
 
-A system at `state/systems/<slug>/system.md` with `stage: ship` and a `form:`,
+A system at `~/.boots/systems/<slug>/system.md` with `stage: ship` and a `form:`,
 meaning it already passed verify with real evidence. If it has not passed verify,
 stop and send it back. Ship assumes verify succeeded, it does not re-run it.
 
@@ -202,4 +202,4 @@ When you mark this system shipped, record it so the board and `boots-surface` ca
 ~/.claude/skills/boots/bin/boots-event --system "<slug>" --event shipped --from "<the stage the record was actually at before you moved it>" --to ship --outcome advanced 2>/dev/null || true
 ```
 
-Fill every `<...>` from the record you just read — the folder slug under `state/systems/`, and the real stages (not an assumed linear step: use the stage the record was actually at). If the user stalled rather than moved forward, change `--outcome` to `blocked`; if they walked away from it, `abandoned`.
+Fill every `<...>` from the record you just read — the folder slug under `~/.boots/systems/`, and the real stages (not an assumed linear step: use the stage the record was actually at). If the user stalled rather than moved forward, change `--outcome` to `blocked`; if they walked away from it, `abandoned`.

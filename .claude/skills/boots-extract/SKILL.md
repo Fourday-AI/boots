@@ -90,7 +90,7 @@ now lives ("I'll remember you care more about taste than a polished CV").
 
 ## Input
 
-A shipped system at `state/systems/<slug>/system.md`, or a piece of external
+A shipped system at `~/.boots/systems/<slug>/system.md`, or a piece of external
 feedback the user pastes.
 
 ## What you do

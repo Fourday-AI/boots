@@ -10,6 +10,14 @@ export interface HostPaths {
   localSkillRoot: string;
   /** bin dir for helper scripts. */
   binDir: string;
+  /**
+   * Where a system's records live: `<boots-home>/systems/<slug>/`. This is the
+   * global Boots home (`~/.boots`), NOT the skill root — systems are the user's
+   * work and must be findable from any directory, so they never live per-repo.
+   * The bin scripts read the same convention at runtime via
+   * `${BOOTS_HOME:-$HOME/.boots}/systems`.
+   */
+  systemsDir: string;
 }
 
 /**
@@ -24,6 +32,7 @@ function buildHostPaths(): Record<string, HostPaths> {
         skillRoot: '$BOOTS_ROOT',
         localSkillRoot: config.localSkillRoot,
         binDir: '$BOOTS_BIN',
+        systemsDir: '$BOOTS_HOME/systems',
       };
     } else {
       const root = `~/${config.globalRoot}`;
@@ -31,6 +40,8 @@ function buildHostPaths(): Record<string, HostPaths> {
         skillRoot: root,
         localSkillRoot: config.localSkillRoot,
         binDir: `${root}/boots/bin`,
+        // Boots home is fixed at ~/.boots regardless of where skills install.
+        systemsDir: '~/.boots/systems',
       };
     }
   }

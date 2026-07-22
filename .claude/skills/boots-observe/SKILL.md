@@ -102,7 +102,7 @@ silent-wrong answer — green process, wrong result — is the failure this skil
 
 ## Input
 
-Every system at `state/systems/<slug>/system.md` with `status: shipped`. Each shipped system
+Every system at `~/.boots/systems/<slug>/system.md` with `status: shipped`. Each shipped system
 should carry a `## health checks` section declaring how to probe *it* specifically (its
 liveness command, what a sane output looks like for it, what "used" means). **Read and use
 that section** — it holds the system-specific detail so this skill can stay general. If a
@@ -182,4 +182,4 @@ When you send this shipped system back into the pipeline for real rework, record
 ~/.claude/skills/boots/bin/boots-event --system "<slug>" --event reopened --from "<the stage the record was actually at before you moved it>" --to "<the stage you set on the record>" --outcome advanced 2>/dev/null || true
 ```
 
-Fill every `<...>` from the record you just read — the folder slug under `state/systems/`, and the real stages (not an assumed linear step: use the stage the record was actually at). If the user stalled rather than moved forward, change `--outcome` to `blocked`; if they walked away from it, `abandoned`.
+Fill every `<...>` from the record you just read — the folder slug under `~/.boots/systems/`, and the real stages (not an assumed linear step: use the stage the record was actually at). If the user stalled rather than moved forward, change `--outcome` to `blocked`; if they walked away from it, `abandoned`.

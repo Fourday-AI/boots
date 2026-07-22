@@ -111,7 +111,7 @@ where they read as equal preferences.
 
 ## Input
 
-A system at `state/systems/<slug>/system.md` with `stage: scope` and a
+A system at `~/.boots/systems/<slug>/system.md` with `stage: scope` and a
 `## foundation` section.
 
 ## What you do
@@ -288,4 +288,4 @@ When you move this system to its next stage, record it so the board and `boots-s
 ~/.claude/skills/boots/bin/boots-event --system "<slug>" --event transition --from "<the stage the record was actually at before you moved it>" --to scope --outcome advanced 2>/dev/null || true
 ```
 
-Fill every `<...>` from the record you just read — the folder slug under `state/systems/`, and the real stages (not an assumed linear step: use the stage the record was actually at). If the user stalled rather than moved forward, change `--outcome` to `blocked`; if they walked away from it, `abandoned`.
+Fill every `<...>` from the record you just read — the folder slug under `~/.boots/systems/`, and the real stages (not an assumed linear step: use the stage the record was actually at). If the user stalled rather than moved forward, change `--outcome` to `blocked`; if they walked away from it, `abandoned`.

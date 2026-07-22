@@ -109,7 +109,7 @@ vocabulary or the raw output.
 
 1. **Read every system's state:**
    ```bash
-   ls state/systems/*/system.md 2>/dev/null
+   ls ~/.boots/systems/*/system.md 2>/dev/null
    ```
    For each system, read its `## now` block first, then `status:`, `stage:`, `form:`,
    and `next_step:`. **Reconcile before you trust it** — the same suspenders the

@@ -49,7 +49,7 @@ When you ${when}, record it so the board and \`boots-surface\` can see where sys
 ${bin}/boots-event --system "<slug>" --event ${event} ${fromClause}${toClause} --outcome ${outcome} 2>/dev/null || true
 \`\`\`
 
-Fill every \`<...>\` from the record you just read — the folder slug under \`state/systems/\`, and the real stages (not an assumed linear step: use the stage the record was actually at). If the user stalled rather than moved forward, change \`--outcome\` to \`blocked\`; if they walked away from it, \`abandoned\`.`;
+Fill every \`<...>\` from the record you just read — the folder slug under \`${ctx.paths.systemsDir}/\`, and the real stages (not an assumed linear step: use the stage the record was actually at). If the user stalled rather than moved forward, change \`--outcome\` to \`blocked\`; if they walked away from it, \`abandoned\`.`;
 }
 
 /**

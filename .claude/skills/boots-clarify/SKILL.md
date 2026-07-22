@@ -166,7 +166,7 @@ in the AskUserQuestion format from `boots/SKILL.md`.
    paragraph in the chat as your output. **Now — and only now — create the folder**,
    with a slug that names what the reframe settled on, not the seed:
    ```bash
-   mkdir -p state/systems/<slug>
+   mkdir -p ~/.boots/systems/<slug>
    ```
    Derive `<slug>` from the reframed problem in the foundation. If the seed was "grade
    their CVs" but the foundation says "a talent scout that screens for taste," the slug
@@ -220,4 +220,4 @@ When you create this system's record, record it so the board and `boots-surface`
 ~/.claude/skills/boots/bin/boots-event --system "<slug>" --event created --to clarify --outcome advanced 2>/dev/null || true
 ```
 
-Fill every `<...>` from the record you just read — the folder slug under `state/systems/`, and the real stages (not an assumed linear step: use the stage the record was actually at). If the user stalled rather than moved forward, change `--outcome` to `blocked`; if they walked away from it, `abandoned`.
+Fill every `<...>` from the record you just read — the folder slug under `~/.boots/systems/`, and the real stages (not an assumed linear step: use the stage the record was actually at). If the user stalled rather than moved forward, change `--outcome` to `blocked`; if they walked away from it, `abandoned`.

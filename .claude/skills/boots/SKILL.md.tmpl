@@ -56,7 +56,7 @@ finished, usable artifact. A system is not done until it has been shipped.
 ## The pipeline
 
 A system moves through stages. Each stage is a skill. Each writes to
-`state/systems/<slug>/system.md`, the next stage reads it. Nothing lives in your
+`{{SYSTEMS_DIR}}/<slug>/system.md`, the next stage reads it. Nothing lives in your
 head between stages.
 
 ```
@@ -73,10 +73,27 @@ Cross-cutting, run any time:
 
 ## What you do when invoked
 
+### Step 0 — Bring in legacy per-repo state (one-time, only when it exists)
+
+Older Boots kept a system's records in `./state/systems/` inside each repo; they now
+live in the global home (`{{SYSTEMS_DIR}}/`). Because the old state was per-repo, there
+is no single migration — you catch each repo lazily, the first time Boots opens in it.
+
+- **Detect:** is there a `./state/systems/` here with at least one `<slug>` that has no
+  matching `{{SYSTEMS_DIR}}/<slug>/`? If not (folder absent, or every local slug already
+  global), **skip silently — never mention migration.**
+- **If yes** and no `~/.boots/.migration-declined-<repo-basename>` marker: run the dry run
+  `{{BIN_DIR}}/boots-migrate-systems --dry-run`, show what it found, and ask once via
+  AskUserQuestion whether to bring those systems into the global home so Boots can see
+  them from any directory. On **yes:** run `{{BIN_DIR}}/boots-migrate-systems`, report what
+  moved, and note the originals are left untouched (the copy is non-destructive — never
+  delete `./state/` yourself). On **no:** `touch ~/.boots/.migration-declined-<repo-basename>`
+  so you don't ask again in this repo.
+
 ### Step 1 — Read where every system stands, then reconcile it against reality
 
 ```bash
-ls state/systems/*/system.md 2>/dev/null
+ls {{SYSTEMS_DIR}}/*/system.md 2>/dev/null
 ```
 
 For each `system.md`, read its `## now` block first (that is the pickup pointer),
@@ -159,7 +176,7 @@ yes, invoke the stage skill. Match:
 
 ## The system file
 
-`state/systems/<slug>/system.md` is the whole record. Shape:
+`{{SYSTEMS_DIR}}/<slug>/system.md` is the whole record. Shape:
 
 ```markdown
 # System: <slug>
@@ -198,7 +215,7 @@ Alongside `system.md`, each system keeps a `sessions/` folder — one file per c
 what it found, and where it stopped. This is the history behind the `## now` block:
 `## now` is where you are, `sessions/` is how you got there.
 
-Create the folder and files by hand, they are plain markdown. `state/systems/` is
+Create the folder and files by hand, they are plain markdown. `{{SYSTEMS_DIR}}/` is
 Boots's own store, separate from any loose-ends records, so no gatekeeper is
 involved. **Reading** backends for opportunities is `boots-prospect`'s job — the
 skills never probe a store directly for a feed. The only direct backend touch left
@@ -264,15 +281,17 @@ to react to a thing you already started, not to figure out the setup. This is th
 single biggest difference between hand-holding and homework.
 
 Make the landing spot *findable*, and *explain the flow*. A repo path like
-`state/systems/<slug>/inputs/` is developer-speak — a nontechnical user in a chat
+`{{SYSTEMS_DIR}}/<slug>/inputs/` is developer-speak — a nontechnical user in a chat
 has no idea where that is on their computer, or how a file dropped there turns into
 a working tool. They will "just drop the spreadsheet in" somewhere and stall. Two
 fixes, every time you hand off a folder:
 
 - **Describe how to find it — don't dump a raw path.** Resolve the *absolute* path
-  (`pwd` + the folder) and give them the move that turns a path into a place: on
-  macOS, "in Finder, press ⌘⇧G, paste this, hit enter" — `<abs>/state/systems/<slug>/inputs`.
-  (Offer to open it for them if they'd rather; don't do it unprompted.) Call it "a
+  (expand `{{SYSTEMS_DIR}}/<slug>/inputs` — it lives in the hidden `~/.boots` home, not
+  this repo) and give them the move that turns a path into a place: on
+  macOS, "in Finder, press ⌘⇧G, paste this, hit enter" — `{{SYSTEMS_DIR}}/<slug>/inputs`.
+  Because it's a hidden folder, lean toward offering to open it for them (don't do it
+  unprompted). Call it "a
   folder on your computer," never "the inputs path."
 - **Explain how the system works with the files, in one plain sentence** — so they
   know these files aren't a throwaway, and where to look afterward. Shape it to the
@@ -350,6 +369,16 @@ a `sessions/<date>_<label>.md` synthesis of what this chat did and where it stop
 Write `## now` as the user's own situation and the next physical move, never a stage
 name. A chat that does the work and records nothing is the exact failure Boots exists
 to prevent; see "The continuity contract" above for the full belt-and-suspenders.
+
+**10. Be the way the user reviews their systems — don't send them into `~/.boots`.**
+A system's record and its work live in the global Boots home
+(`{{SYSTEMS_DIR}}/<slug>/`), a hidden folder the user can't browse the way they'd
+browse a repo. So *you* are the review surface: when they want to see where something
+stands, what it produced, or the thing you built — read `system.md`, the latest
+`sessions/` entry, and the artifact, and render it in the chat in plain English. When
+a system is shipped or reaches a real checkpoint, proactively offer to show the record
+and open the built artifact, rather than naming a path they'd have to go find. The
+user reviews *through Boots*; that is the whole reason the records can live global.
 
 ## Context the system needs to be good (its reference notes)
 

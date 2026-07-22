@@ -97,19 +97,20 @@ in the chat, not just the file.
 
 ## Input
 
-A system at `state/systems/<slug>/system.md` with `stage: verify`, a `form:`, and
+A system at `~/.boots/systems/<slug>/system.md` with `stage: verify`, a `form:`, and
 a `target:` that scope wrote to fit that form.
 
 ## What you do — run the check that matches the form
 
 **First, get the real examples in front of you.** Verify means running the thing on
 actual inputs, not a toy the model invents. Look in the fixtures folder build staged
-(`state/systems/<slug>/inputs/`). If it has real examples, use them. If it is empty
+(`~/.boots/systems/<slug>/inputs/`). If it has real examples, use them. If it is empty
 or only has the README, **stop and ask for them in plain English — describe how to
 find the folder, don't just name the path** (rule 3 in `boots/SKILL.md`): resolve the
-absolute path (`pwd`) and tell them how to reach it — "To prove this works I need 2-3
-real examples. In Finder press ⌘⇧G, paste `<abs>/state/systems/<slug>/inputs`, and
-drop them in there (or ask me to open it); the tool reads that folder when it runs.
+absolute path (expand `~/.boots/systems/<slug>/inputs` — it's in the hidden `~/.boots`
+home) and tell them how to reach it — "To prove this works I need 2-3
+real examples. In Finder press ⌘⇧G, paste `~/.boots/systems/<slug>/inputs`, and
+drop them in there (or ask me to open it — it's a hidden folder); the tool reads that folder when it runs.
 Tell me when they're in." Do not verify on
 made-up data and do not skip to a pass; a system with no real examples is not
 verified, it is unproven. Only invent a minimal fixture if the user explicitly says
@@ -242,4 +243,4 @@ When you move this system to its next stage, record it so the board and `boots-s
 ~/.claude/skills/boots/bin/boots-event --system "<slug>" --event transition --from "<the stage the record was actually at before you moved it>" --to verify --outcome advanced 2>/dev/null || true
 ```
 
-Fill every `<...>` from the record you just read — the folder slug under `state/systems/`, and the real stages (not an assumed linear step: use the stage the record was actually at). If the user stalled rather than moved forward, change `--outcome` to `blocked`; if they walked away from it, `abandoned`.
+Fill every `<...>` from the record you just read — the folder slug under `~/.boots/systems/`, and the real stages (not an assumed linear step: use the stage the record was actually at). If the user stalled rather than moved forward, change `--outcome` to `blocked`; if they walked away from it, `abandoned`.

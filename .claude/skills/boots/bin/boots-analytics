@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# boots-analytics — roll up the funnel across every system in this repo.
+# boots-analytics — roll up the funnel across every system you have.
 #
-# The read side of Layer A: turns the per-system state/systems/<slug>/events.jsonl
+# The read side of Layer A: turns each system's ~/.boots/systems/<slug>/events.jsonl
 # (plus system.md for current declared state) into "where do systems flow and
 # stall". Consumed by the board skills (boots router, boots-surface) which narrate
 # it in Boots' voice, by boots-retire (cold-since), and runnable directly by you.
@@ -15,11 +15,12 @@
 #   boots-analytics --brief      compact form for a skill to read + re-narrate
 #   boots-analytics --stale-days N   stalled threshold (default 14)
 #
-# Reads the current repo (state/systems/ under CWD). Never mutates anything.
+# Reads the global Boots home (~/.boots/systems/, overridable via BOOTS_HOME), so
+# every system shows up no matter which directory you're in. Never mutates anything.
 set -uo pipefail
 
 STATE_DIR="${BOOTS_HOME:-$HOME/.boots}"
-SYSTEMS_DIR="state/systems"
+SYSTEMS_DIR="$STATE_DIR/systems"
 BRIEF=0
 STALE_DAYS=14
 COMMUNITY=0
@@ -70,7 +71,7 @@ file_mtime() { stat -f %m "$1" 2>/dev/null || stat -c %Y "$1" 2>/dev/null || ech
 field() { grep -m1 "^$2:" "$1" 2>/dev/null | sed "s/^$2:[[:space:]]*//; s/[[:space:]]*#.*//; s/[[:space:]]*\$//"; }
 
 if [ ! -d "$SYSTEMS_DIR" ]; then
-  echo "No systems yet in this repo (state/systems/ is empty)."
+  echo "No systems yet (~/.boots/systems/ is empty)."
   exit 0
 fi
 
@@ -140,7 +141,7 @@ if [ "$BRIEF" -eq 1 ]; then
   exit 0
 fi
 
-echo "Boots — where your systems stand (this repo)"
+echo "Boots — where your systems stand"
 echo "════════════════════════════════════════════"
 echo "Pipeline:  $pipeline"
 echo "Shipped: $shipped  ·  Abandoned: $retired  ·  Active: $active  ·  Stalled (>${STALE_DAYS}d): $stalled"

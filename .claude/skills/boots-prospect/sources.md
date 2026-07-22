@@ -30,7 +30,7 @@ next:   boots-clarify (still fuzzy) | boots-track or boots-scope (already clear)
 ## Shipped adapters (v1)
 
 ### state-systems — the dedupe filter (not a source of new work)
-- **detect:** `ls state/systems/*/system.md 2>/dev/null`
+- **detect:** `ls ~/.boots/systems/*/system.md 2>/dev/null`
 - **read:** read each `system.md`'s slug + foundation.
 - **shape:** not a source — this is the **exclusion set**. Any candidate that
   matches a tracked system is dropped. Prospect surfaces *untracked* work only.

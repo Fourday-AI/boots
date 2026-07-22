@@ -27,7 +27,7 @@ six weeks"), not by its stage.
 
 1. **Find the cold and the overridden:**
    ```bash
-   ls -lt state/systems/*/system.md 2>/dev/null
+   ls -lt {{SYSTEMS_DIR}}/*/system.md 2>/dev/null
    PY=.venv/bin/python; [ -x "$PY" ] || PY=python3
    $PY -m toolkit records summary 2>/dev/null || true
    ```
