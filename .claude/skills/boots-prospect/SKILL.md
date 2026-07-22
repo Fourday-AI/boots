@@ -80,10 +80,20 @@ Replace `OUTCOME` before running.
 # Boots prospect (cross-cutting)
 
 Prospect is the mouth of the funnel. Before anything enters the pipeline, someone
-has to notice it is worth building. Prospect does that: it looks across every place
-latent AI work hides — your Claude Code memory, past sessions, a loose-ends
-backend, TODOs rotting in a repo, even other AI tools you use — and hands back a
-**ranked field of opportunities**, each with the evidence it came from.
+has to notice it is worth building. Prospect does that in two moves: it **reads who
+you are** — the role you're in, what you keep doing by hand, the assets and
+connections you already have wired — and then it hands back a **ranked field of
+opportunities** aimed at that person. The field is two kinds of thing woven
+together: **loose threads you've already started** (mined from your Claude Code
+memory, past sessions, a loose-ends backend, TODOs rotting in a repo, other AI tools
+you use) and **builds your profile obviously implies** but that you haven't written
+down anywhere yet. Every item carries its evidence — a quote/path for a found
+thread, the named pattern in what you do for a profile-derived one.
+
+The half that makes prospect feel like it *gets* you is the first move. A run that
+skips straight to mining hands back a competent list that could belong to anyone; a
+run that first reflects back *"here's who I think you are and what you keep doing"*
+makes the same list land as **yours**. Do the understanding first, out loud, always.
 
 This is not `boots-surface`. Surface emits the single most useful next step on work
 already **tracked**. Prospect emits the **field** of work that is **not yet
@@ -98,28 +108,54 @@ chats", "the stuff you use Cursor for").
 Follow all the rules in `boots/SKILL.md` — "How Boots talks", including the
 plain-English translation table.
 
-Read-only. Prospect **finds**; `boots-track` does the promoting and the writing.
+Read-only. Prospect **understands, finds, and infers**; `boots-track` does the
+promoting and the writing.
 
 ## What you do
 
-1. **Detect what's available.** For each source in `sources.md`, run its `detect:`
+1. **Read who you are — first, before hunting for threads.** Build a short working
+   picture of the person: the role they're in, what they keep doing by hand, the
+   assets, data, and connections they already have wired, the shape of what they
+   ship. Pull it from the `type: user` profile notes in Claude Code memory (the
+   `user-profile` read in `sources.md`) and from the patterns that repeat across
+   projects — a founder of a 161K-user paying product reads very differently from a
+   freelance designer, and the field you surface should too. You'll open the emit by
+   reflecting this back, so hold it as a few concrete lines, not a vibe.
+2. **Detect what's available.** For each source in `sources.md`, run its `detect:`
    check to see if it's present on this machine. Two outcomes matter:
    - sources you **have an adapter for** and that are present → you'll mine them.
    - AI tools you detect but have **no reader for** (Cursor, ChatGPT desktop, …) →
      you'll report these as untapped, and can offer to learn one (see below).
-2. **Mine each present source** (read-only) using its adapter's `read:` step. Each
-   raw hit becomes a candidate in the common shape from `sources.md`: *what it is,
-   where it came from (a real quote / path / record id), why it might matter.*
-3. **Dedupe against the pipeline.** Read `~/.boots/systems/*/system.md` and drop any
+3. **Mine each present source for threads already started** (read-only) using its
+   adapter's `read:` step. Each raw hit becomes a candidate in the common shape from
+   `sources.md`: *what it is, where it came from (a real quote / path / record id),
+   why it might matter.* This is the found work — the archaeology half.
+4. **Reason from the picture to what they haven't written down.** The profile move,
+   and the half that answers "all the things I could build." Given who they are and
+   what they visibly do over and over, what would a person in *exactly their
+   position* obviously benefit from building — that is not sitting in a note yet?
+   These are **profile-derived** candidates (the `profile-derived` entry in
+   `sources.md`), and they are held to a hard bar: **each must trace to a real,
+   evidenced pattern** in what they do — a recurring manual chore, a dataset or
+   connection they keep leveraging, a responsibility of their role. Grounded
+   inference, never a generic brainstorm. "You're a founder, so build a CRM / a
+   chatbot / an analytics dashboard" is slop and is banned — if you can't point at
+   the specific pattern in *this* person's work that the idea falls out of, cut it.
+5. **Dedupe against the pipeline.** Read `~/.boots/systems/*/system.md` and drop any
    candidate that is already a tracked system. Prospect surfaces **untracked** work;
    never re-surface something already in flight.
-4. **Rank by value-if-finished** — the same instinct `boots-surface` uses. What
-   would unlock the most, what the user keeps circling back to, what is closest to
-   real. Cheap curiosities sink; recurring intent rises.
-5. **Emit the ranked field.** Not one line — a short list. For each: what it is in
-   plain words, the evidence it came from, why it's worth it, and the suggested next
-   move (`boots-clarify` if fuzzy, `boots-track`/`boots-scope` if already clear).
-6. **Report coverage honestly — no silent skips.** If you detected a tool you
+6. **Rank by value-if-finished** — the same instinct `boots-surface` uses. Found
+   threads and profile-derived ideas compete in one list. What would unlock the
+   most, what the user keeps circling back to, what is closest to real. Cheap
+   curiosities sink; recurring intent and clean leverage rise.
+7. **Emit — lead with the picture, then the field.** Open with two or three plain
+   lines reflecting what you understood about them and what they do, so the list
+   reads as personal and they can correct you if you're off. Then the ranked field —
+   not one line, a short list. For each: what it is in plain words, the evidence it
+   came from (a quote/path for found work, the named pattern for a profile-derived
+   idea — and say which kind it is), why it's worth it, and the suggested next move
+   (`boots-clarify` if fuzzy, `boots-track`/`boots-scope` if already clear).
+8. **Report coverage honestly — no silent skips.** If you detected a tool you
    couldn't read, say so: *"I mined your memory and this repo's TODOs; I also see
    you use Cursor and ChatGPT desktop but can't read those yet — want me to learn
    one?"* Implying you scanned everything when you skipped a detected source is the
@@ -169,7 +205,15 @@ When detection finds a tool with no adapter and the user says "yes, learn it":
 ## The rule
 
 This is Move 0 — it runs *before* the pipeline, feeding it. A prospector that
-surfaces ten shiny opportunities you'll never touch is noise; one that finds the
-single thread you actually pick up is the whole job. Rank hard, dedupe against
-what's already tracked, and be honest about what you couldn't read. Finding beats
-hoarding.
+surfaces ten shiny opportunities you'll never touch is noise; one that hands you the
+single thing you actually pick up is the whole job. It earns that by **knowing who
+you are first**, then drawing on both what you've already started and what your
+profile plainly implies.
+
+Grounded invention is in scope — but only grounded. Prospect does not just excavate
+notes; it reasons from the real shape of your work to builds you haven't named. The
+guardrail is the same anti-slop spine either way: every profile-derived idea must
+fall out of an evidenced pattern in *this* person's work, or it's cut. Generic
+founder advice is noise wearing a suit. Rank hard, dedupe against what's already
+tracked, be honest about what you couldn't read. **Understanding you, then finding
+and inferring what's worth building for you — that beats hoarding.**

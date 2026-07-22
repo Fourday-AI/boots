@@ -42,6 +42,16 @@ next:   boots-clarify (still fuzzy) | boots-track or boots-scope (already clear)
 - **shape:** `what` = the ambition in the note; `source` = the memory file + line;
   `why` = why it was worth remembering; `next` = usually clarify.
 
+### user-profile — who the person is (feeds the picture, not a candidate)
+- **detect:** `ls ~/.claude/projects/*/memory/*.md 2>/dev/null` (same store as
+  claude-memory; always co-present with it).
+- **read:** read the `metadata: type: user` notes (e.g. a `user_*founder*.md`) plus
+  the roles/assets/behaviors that recur across projects — what they ship, what they
+  do by hand, what data and connections they already have wired.
+- **shape:** **not a candidate source** — this builds the *working picture* the skill
+  reflects back in step 1 and reasons from in step 4 (`profile-derived`). It never
+  emits an opportunity by itself; it's the lens the other sources are read through.
+
 ### loose-ends toolkit — an optional graveyard backend
 - **detect:** `PY=.venv/bin/python; [ -x "$PY" ] || PY=python3; $PY -m toolkit records summary 2>/dev/null`
 - **read:** `$PY -m toolkit records summary`, then `$PY -m toolkit records show <id>`
@@ -56,6 +66,21 @@ next:   boots-clarify (still fuzzy) | boots-track or boots-scope (already clear)
   `docs/` notes that name a follow-up, draft/`.wip` files.
 - **shape:** `what` = the deferred work; `source` = file:line or branch name;
   `why` = what it blocks; `next` = scope if clear, clarify if vague.
+
+### profile-derived — grounded ideation from who they are (invents, doesn't excavate)
+- **detect:** always available once the `user-profile` picture exists (step 1).
+- **read:** reason from the picture — for each recurring pattern in what they do (a
+  manual chore they repeat, a dataset/corpus they keep leveraging, a connection
+  already wired, a responsibility of their role), ask: *what would this specific
+  person obviously benefit from building that they haven't written down?* These are
+  net-new ideas, not mined notes.
+- **shape:** `what` = the inferred build; `source` = the **named pattern** it traces
+  to (not a quote — e.g. "you run feedback outreach by hand and your Gmail is already
+  wired"); `why` = the leverage if it existed; `next` = usually clarify.
+- **notes:** the anti-slop bar is the whole point. Every item **must** trace to an
+  evidenced pattern in *this* person's work. Generic role advice ("a founder should
+  build a CRM / a chatbot / a dashboard") is banned — if you can't name the specific
+  pattern it falls out of, cut it. Grounded inference, never a blind brainstorm.
 
 ### user-recall — just ask
 - **detect:** always available.
