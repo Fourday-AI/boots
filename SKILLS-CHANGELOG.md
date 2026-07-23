@@ -7,6 +7,19 @@ inferred from the diff, not written by hand. Each entry ends with a
 
 <!-- New entries go directly below this line. -->
 
+## [2026-07-23] Accurate weekly-active count in the community funnel
+**The community funnel's "weekly active installs" now counts distinct installs, not
+raw activity, so the number reflects how many people used Boots — not how much.**
+
+Previously one install that ran several skills in a week inflated the figure. It now
+counts each active install once.
+
+### Fixed
+- **boots (community funnel):** `weekly active installs` is now a distinct-install
+  count instead of a raw event-row count.
+
+_Tracked up to: bf3f277fba4ba7fae04ef8e2d8265cda6b33dec3
+
 ## [2026-07-23] Community funnel goes live
 **Boots can now show the aggregate community funnel — where systems across all
 opted-in installs flow and stall — and opted-in installs can contribute to it.**
