@@ -26,8 +26,20 @@ state/systems/reply-guard/output/launchd.log
 .codex/
 node_modules/
 
-# Claude.md file
-CLAUDE.md
+# Local-clone runtime state — created when Boots runs in this dev repo in place.
+# The real per-user copies live under ~/.boots/; these top-level artifacts are
+# NOT part of the product and must never be committed. systems/ in particular
+# holds the author's own private systems (the same data ~/.boots/systems/ holds
+# for a user). CLAUDE.md and IDEAS.md are deliberately absent here — both ARE
+# tracked contributor docs.
+/.activated
+/.consent-prompted
+/.last-setup-version
+/analytics/
+/config.yaml
+/installation-id
+/sessions/
+/systems/
 
 # Eval corpus — RAW session transcripts contain real client PII (names, account
 # numbers, balances from live sessions). Never commit. The distilled, redacted
