@@ -7,6 +7,23 @@ inferred from the diff, not written by hand. Each entry ends with a
 
 <!-- New entries go directly below this line. -->
 
+## [2026-07-23] End-to-end tests you can run in one command
+**Boots now has a repeatable test suite that proves the update check and the whole
+telemetry pipeline actually work — run it with one command.**
+
+`bun run test` runs an offline suite (no network, no secrets): it exercises the
+update-check behaviour in every state, and — importantly — proves the privacy
+promise by inspecting the exact bytes the telemetry sync would send, confirming
+system names are hashed and repo names stripped before anything could leave the
+machine. `bun run test:live` adds real checks against GitHub and the hosted backend.
+
+### Added
+- **Test suite (`scripts/test-e2e.sh`):** one-command end-to-end tests for the update
+  check (all states) and telemetry (privacy transform, tiers, funnel rollup, and an
+  opt-in live ingest/pulse round-trip). 30 checks, all green.
+
+_Tracked up to: 9cd99053eb23846c41f005805f5060125d4d3fd5
+
 ## [2026-07-23] Accurate weekly-active count in the community funnel
 **The community funnel's "weekly active installs" now counts distinct installs, not
 raw activity, so the number reflects how many people used Boots — not how much.**
