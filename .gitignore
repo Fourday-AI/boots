@@ -26,6 +26,28 @@ state/systems/reply-guard/output/launchd.log
 .codex/
 node_modules/
 
+# ── Skills allow-list (deny-by-default) ─────────────────────────────────────
+# This is an OPEN-SOURCE repo. Everything under .claude/skills/ is ignored, and
+# ONLY the product skills below are un-ignored. A newly created skill dir is
+# invisible to git until you add an explicit `!` line for it here — so a private
+# or experimental skill can never be committed by accident (not even via
+# `git add -A`). When you ship a NEW product skill, add one line below.
+/.claude/skills/*
+!/.claude/skills/boots/
+!/.claude/skills/boots-clarify/
+!/.claude/skills/boots-scope/
+!/.claude/skills/boots-build/
+!/.claude/skills/boots-review/
+!/.claude/skills/boots-verify/
+!/.claude/skills/boots-ship/
+!/.claude/skills/boots-prospect/
+!/.claude/skills/boots-track/
+!/.claude/skills/boots-surface/
+!/.claude/skills/boots-extract/
+!/.claude/skills/boots-retire/
+!/.claude/skills/boots-observe/
+!/.claude/skills/boots-upgrade/
+
 # Local-clone runtime state — created when Boots runs in this dev repo in place.
 # The real per-user copies live under ~/.boots/; these top-level artifacts are
 # NOT part of the product and must never be committed. systems/ in particular
