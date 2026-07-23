@@ -87,3 +87,24 @@ create view crash_clusters with (security_invoker = on) as
   group by skill order by crashes desc;
 
 revoke all on funnel_by_stage, graveyard, crash_clusters from anon, authenticated;
+
+-- weekly_active is DISTINCT installs in the window, not raw run_events rows (one
+-- install with many runs counts once). PostgREST can't express count(distinct)
+-- inline, so community-pulse calls this. SECURITY INVOKER + pinned empty search_path
+-- (no definer escalation / injection); revoked from the public API — only the pulse
+-- function's service-role client calls it. NULL installation_id (anonymous tier) is
+-- excluded: an unidentified run isn't a distinct known install.
+create or replace function public.weekly_active_installs(since timestamptz)
+returns bigint
+language sql
+stable
+security invoker
+set search_path = ''
+as $$
+  select count(distinct installation_id)
+  from public.run_events
+  where event_timestamp >= since and installation_id is not null;
+$$;
+
+revoke all on function public.weekly_active_installs(timestamptz) from public, anon, authenticated;
+grant execute on function public.weekly_active_installs(timestamptz) to service_role;

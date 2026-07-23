@@ -29,9 +29,10 @@ Deno.serve(async () => {
   try {
     const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
-    const { count: weekly } = await supabase
-      .from("run_events").select("installation_id", { count: "exact", head: true })
-      .gte("event_timestamp", weekAgo);
+    // Distinct installs active in the window (not raw run_events rows) — via an RPC,
+    // since PostgREST can't express count(distinct) inline.
+    const { data: weeklyRaw } = await supabase.rpc("weekly_active_installs", { since: weekAgo });
+    const weekly = Number(weeklyRaw) || 0;
 
     const { data: funnel, error } = await supabase
       .from("funnel_events").select("event, to_stage, from_stage").gte("event_timestamp", weekAgo);
@@ -47,7 +48,7 @@ Deno.serve(async () => {
     }
     const graveyard = Object.entries(grave).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
 
-    const payload = { status: "ok", weekly_active: weekly ?? 0, pipeline, shipped, abandoned, graveyard };
+    const payload = { status: "ok", weekly_active: weekly, pipeline, shipped, abandoned, graveyard };
     await supabase.from("community_pulse_cache").upsert({ id: 1, data: payload, refreshed_at: new Date().toISOString() });
     return new Response(JSON.stringify(payload), { status: 200, headers: JSON_HEADERS });
   } catch {
