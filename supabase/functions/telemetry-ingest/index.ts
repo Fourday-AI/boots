@@ -64,11 +64,15 @@ Deno.serve(async (req) => {
       const { error } = await supabase.from("run_events").insert(runs);
       if (!error) inserted += runs.length;
     }
+    // Plain insert, not upsert. Any upsert (ON CONFLICT, merge OR ignore) makes
+    // PostgREST route through a path that trips the insert-only RLS here with 42501;
+    // a bare INSERT under the anon_insert policy (WITH CHECK true) is the only shape
+    // that lands. A new install records first_seen; a repeat raises 23505 which we
+    // deliberately ignore. last_seen isn't tracked (and isn't read anywhere) —
+    // per-install recency is recoverable from the event streams, which carry
+    // installation_id + event_timestamp.
     for (const [id, os] of installs) {
-      await supabase.from("installations").upsert(
-        { installation_id: id, last_seen: new Date().toISOString(), os },
-        { onConflict: "installation_id" },
-      );
+      await supabase.from("installations").insert({ installation_id: id, os });
     }
 
     return new Response(JSON.stringify({ inserted }), {

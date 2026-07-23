@@ -57,23 +57,33 @@ create policy anon_insert on funnel_events for insert with check (true);
 alter table run_events enable row level security;
 create policy anon_insert on run_events for insert with check (true);
 
+-- installations is strictly insert-only for anon. A true upsert (ON CONFLICT) trips
+-- RLS here (PostgREST routes it through a path the insert-only policy rejects with
+-- 42501), so the ingest function does a plain INSERT and ignores the 23505 on repeat
+-- installs. No UPDATE policy — a new install records first_seen; last_seen isn't
+-- tracked (per-install recency is recoverable from the event streams).
 alter table installations enable row level security;
 create policy anon_insert on installations for insert with check (true);
-create policy anon_update on installations for update using (true) with check (true);
 
 alter table community_pulse_cache enable row level security;  -- no anon policy → anon denied
 
 -- Read views (service-role only). The community funnel: where do systems flow and die.
-create view funnel_by_stage as
+-- security_invoker=on is load-bearing: without it a view runs as its (postgres) owner
+-- and BYPASSES the base tables' insert-only RLS, letting anon read aggregates via
+-- PostgREST. With it, a querying role hits the base-table RLS (no SELECT policy) and
+-- is denied. The revoke is belt-and-braces so the anon key can't reach them at all.
+create view funnel_by_stage with (security_invoker = on) as
   select to_stage as stage, count(*) as moves, count(distinct installation_id) as installs
   from funnel_events where to_stage is not null group by to_stage;
 
-create view graveyard as
+create view graveyard with (security_invoker = on) as
   select from_stage as stage, count(*) as abandonments
   from funnel_events where event = 'retired' and from_stage is not null
   group by from_stage order by abandonments desc;
 
-create view crash_clusters as
+create view crash_clusters with (security_invoker = on) as
   select skill, count(*) as crashes
   from run_events where outcome in ('error','unknown')
   group by skill order by crashes desc;
+
+revoke all on funnel_by_stage, graveyard, crash_clusters from anon, authenticated;

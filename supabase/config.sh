@@ -7,5 +7,5 @@
 # no-op and nothing leaves the machine — the whole remote layer is dormant, exactly
 # like the update check with no git remote. To go live: create a Supabase project,
 # deploy supabase/functions/*, apply supabase/migrations/*, then fill these two in.
-BOOTS_SUPABASE_URL="${BOOTS_SUPABASE_URL:-}"
-BOOTS_SUPABASE_ANON_KEY="${BOOTS_SUPABASE_ANON_KEY:-}"
+BOOTS_SUPABASE_URL="${BOOTS_SUPABASE_URL:-https://kamchoalzvaynjvogpkf.supabase.co}"
+BOOTS_SUPABASE_ANON_KEY="${BOOTS_SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImthbWNob2FsenZheW5qdm9ncGtmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ3NzIxNTcsImV4cCI6MjEwMDM0ODE1N30.fHaVB1KCf3885fKjJshpcML3q-ie1a8jrKJloTOkhKs}"

@@ -66,6 +66,10 @@ node_modules/
 /systems/
 /update-snoozed
 
+# Supabase CLI local state (version cache, temp files) — created by the CLI, never
+# part of the product. The committed backend is supabase/{migrations,functions,config.sh}.
+/supabase/.temp/
+
 # Eval corpus — RAW session transcripts contain real client PII (names, account
 # numbers, balances from live sessions). Never commit. The distilled, redacted
 # eval CASES under evals/cases/ are safe and ARE committed.
