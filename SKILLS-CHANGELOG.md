@@ -7,6 +7,32 @@ inferred from the diff, not written by hand. Each entry ends with a
 
 <!-- New entries go directly below this line. -->
 
+## [2026-07-23] Community funnel goes live
+**Boots can now show the aggregate community funnel — where systems across all
+opted-in installs flow and stall — and opted-in installs can contribute to it.**
+
+The telemetry backend was fully built but dormant (no project provisioned). It's now
+live and wired end to end: an opted-in install ships its funnel (systems moving
+through stages) and ops runs to a hosted endpoint, and `boots-analytics --community`
+reads back the aggregate — weekly-active installs, shipped/abandoned counts, and the
+stage systems most often die at. Privacy is enforced on your machine before anything
+leaves it: system names are hashed, repo names are stripped, and it's **off by default**
+— nothing is sent unless you explicitly opt in.
+
+### Added
+- **boots (community funnel):** `boots-analytics --community` now returns real
+  aggregate stats from the hosted backend instead of "not available yet". Opted-in
+  installs contribute via `boots-telemetry-sync`. Still off by default; the anon key
+  in the public config is read-blocked by row-level security (it can only append
+  events, never read anyone's data).
+
+### Fixed
+- **boots (telemetry ingest):** per-install records now actually persist. The
+  insert-only privacy model made the previous upsert silently fail, so the
+  installations stream was dropping every record.
+
+_Tracked up to: ee7071e5f7b5c8c9c19962d6eda0b5207ec09450_
+
 ## [2026-07-23] Update notices work on private installs
 **Boots now reliably tells you when a newer version is available — even when your
 install points at a private repo.**
