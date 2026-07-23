@@ -172,6 +172,30 @@ Shell scripts the preamble and stages call silently. Global state lives under `~
   install at once. `setup` regenerates skills from templates if bun is present, else installs
   committed `.md` as-is.
 
+## Committing safely: the skills allow-list
+
+This is an **open-source repo you also iterate in**, so `.gitignore` is deny-by-default
+where private data could leak:
+
+- **`.claude/skills/` is an explicit allow-list.** `/.claude/skills/*` ignores every
+  skill dir; each product skill is un-ignored with its own `!/.claude/skills/<name>/`
+  line. A newly created skill dir — private experiment, client work, half-baked idea —
+  is **invisible to git until you add its `!` line**, so nothing private is committable
+  by accident (verified: even `git add -A` cannot stage an unlisted skill). The friction
+  is the point: tracking is opt-in, so the only failure mode is "forgot to publish a
+  public skill" (harmless, obvious on the next `git status`), never the reverse. **When
+  you ship a new product skill, add one `!` line for it.** This is deliberately an
+  explicit list, not a `boots*/` glob — a glob would silently auto-commit a
+  `boots-clientwork` dir; the list makes every publish a conscious act.
+- **Local-clone runtime state is ignored.** Running Boots in this repo in place creates
+  top-level `.activated`, `.consent-prompted`, `.last-setup-version`, `analytics/`,
+  `config.yaml`, `installation-id`, `sessions/`, and `systems/` — the same artifacts
+  `~/.boots/` holds per-user. They are NOT part of the product (`systems/` in particular
+  holds private work) and are all gitignored. `CLAUDE.md` and `IDEAS.md` are the tracked
+  contributor docs.
+- The same deny-by-default pattern is the tool to reach for if you add any other
+  top-level dir that mixes public and private.
+
 ## Conventions
 
 - **Boots is open source: keep the `boots-*` skills generic.** Never bake private data
