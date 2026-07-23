@@ -91,6 +91,14 @@ _SHA="$(GIT_TERMINAL_PROMPT=0 GIT_HTTP_LOW_SPEED_LIMIT=1000 GIT_HTTP_LOW_SPEED_T
 _OWNER_REPO="$(printf '%s' "$REMOTE_REPO" | sed -E 's#^git@github\.com:##; s#^https://github\.com/##; s#\.git$##')"
 if echo "$_SHA" | grep -qE '^[0-9a-f]{40}$' && echo "$REMOTE_REPO" | grep -q 'github\.com'; then
   REMOTE="$(curl -sf --max-time 5 "https://raw.githubusercontent.com/${_OWNER_REPO}/${_SHA}/VERSION" 2>/dev/null || true)"
+  # Private repo → raw CDN 404s (it only serves public files). Fall back to the
+  # authenticated GitHub API via gh, if installed. The public open-source path stays
+  # primary (raw CDN, zero deps); gh is used only when the CDN returns nothing. The
+  # raw Accept header returns the file verbatim, so there's no base64 to decode.
+  if [ -z "$REMOTE" ] && command -v gh >/dev/null 2>&1; then
+    REMOTE="$(gh api "repos/${_OWNER_REPO}/contents/VERSION?ref=${_SHA}" \
+      -H "Accept: application/vnd.github.raw" 2>/dev/null || true)"
+  fi
 fi
 REMOTE="$(printf '%s' "$REMOTE" | tr -d '[:space:]')"
 

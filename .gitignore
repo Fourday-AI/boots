@@ -60,8 +60,11 @@ node_modules/
 /analytics/
 /config.yaml
 /installation-id
+/just-upgraded-from
+/last-update-check
 /sessions/
 /systems/
+/update-snoozed
 
 # Eval corpus — RAW session transcripts contain real client PII (names, account
 # numbers, balances from live sessions). Never commit. The distilled, redacted
