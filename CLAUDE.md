@@ -60,6 +60,8 @@ boots/
 │   ├── gen-skill-docs.ts   #   read .tmpl → resolve {{TOKENS}} → host transforms → write .md
 │   ├── discover-skills.ts  #   finds every SKILL.md.tmpl under .claude/skills
 │   ├── host-config.ts      #   HostConfig interface the hosts/ files implement
+│   ├── test-e2e.sh         #   end-to-end tests: `bun run test` (offline, CI-safe) ·
+│   │                       #   `bun run test:live` (+ GitHub upgrade + real ingest/pulse)
 │   └── resolvers/          #   each {{TOKEN}} → a generator function
 │       ├── index.ts        #     RESOLVERS map (PREAMBLE, FUNNEL_*, BIN_DIR, SKILL_DIR, SYSTEMS_DIR)
 │       ├── preamble.ts     #     {{PREAMBLE}} — the universal block injected into every skill
