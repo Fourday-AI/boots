@@ -7,6 +7,30 @@ inferred from the diff, not written by hand. Each entry ends with a
 
 <!-- New entries go directly below this line. -->
 
+## [2026-07-23] Update notices work on private installs
+**Boots now reliably tells you when a newer version is available — even when your
+install points at a private repo.**
+
+The update check used to fetch its version marker from a public CDN, which silently
+returns "not found" for private repositories. On those installs the check quietly
+assumed you were up to date and never surfaced an upgrade. It now falls back to an
+authenticated fetch, so the "a new Boots is available" nudge actually fires.
+
+### Fixed
+- **boots (update check):** detects available upgrades on private-repo installs
+  instead of silently reporting up-to-date. The public fast path is unchanged; the
+  authenticated fallback only kicks in when the public fetch returns nothing. Verified
+  end to end across every branch — upgrade-available, up-to-date, snooze, force,
+  dev-running-ahead, kill switch, and the just-upgraded notice.
+
+### Internal
+- Repo-hygiene: `.claude/skills/` is now a deny-by-default allow-list (a new private
+  or client skill is invisible to git until its dir is explicitly listed), the update
+  check's runtime artifacts are gitignored, and `CLAUDE.md`/`IDEAS.md` are tracked
+  contributor docs. No change to any shipped skill's behavior.
+
+_Tracked up to: 7899ff96953cd5a35d927bf19a31204244585f97_
+
 ## [2026-07-22] A real first run for new users, every system in one home, and prospect that understands you
 **The first time you run Boots it now introduces itself and shows what "finished"
 looks like, your systems live in one place you can reach from any folder, and Boots
