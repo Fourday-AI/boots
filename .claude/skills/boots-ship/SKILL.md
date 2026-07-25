@@ -179,6 +179,16 @@ Keep this to one or two that genuinely fit, as a decision brief. Do not list all
 at every ship. The point is that finishing one system opens the door to a bigger one,
 and Boots is the thing that notices.
 
+**A ship is also the moment the whole picture changed, so mark the map stale.** A
+newly finished thing is the strongest reason to re-read what all the user's systems
+add up to: it may now answer a question outright, make another system redundant, or
+supply the piece something else was waiting on. Note in `~/.boots/map.md` that a system
+shipped since its `last read` (or, if the file doesn't exist yet and there are three
+or more systems, just say so) — the router picks that up and runs `boots-rethink` on
+the next open. **Shipping a system does not answer the question that caused it**, and
+this is the hook that stops a finished system quietly ending a line of enquiry that is
+still open.
+
 ## Then hand to extract
 
 A shipped system is the trigger for `boots-extract`. Tell the user plainly that it's

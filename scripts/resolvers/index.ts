@@ -23,4 +23,10 @@ export const RESOLVERS: Record<string, ResolverValue> = {
   // reference `{{SYSTEMS_DIR}}/<slug>/...` so the path is defined once here and
   // stays in lockstep with the bin scripts' runtime default (~/.boots/systems).
   SYSTEMS_DIR: (ctx) => ctx.paths.systemsDir,
+  // The Boots home itself — parent of systems/, holds the cross-system records.
+  BOOTS_HOME: (ctx) => ctx.paths.bootsHome,
+  // The map: Boots' standing answer to "what is this person actually building",
+  // the questions in play, and which systems serve each. Lives above the systems
+  // because a question outlives any one system that serves it.
+  MAP_FILE: (ctx) => ctx.paths.mapFile,
 };

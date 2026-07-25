@@ -125,6 +125,9 @@ you don't need the full scan — take that one.
    form: (decided at scope)
    next_step: run boots-clarify to sharpen this, or boots-scope if it's already clear
    target: n/a
+   question: <why it exists: what it needs to find out, or the decision it feeds —
+     your best read of the abandoned thread's real point; "unclear, ask at clarify"
+     is an honest value and better than a guess dressed up as fact>
    id: <loose-end id, or omit>
 
    ## now

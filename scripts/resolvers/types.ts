@@ -20,6 +20,17 @@ export interface HostPaths {
    * `${BOOTS_HOME:-$HOME/.boots}/systems`.
    */
   systemsDir: string;
+  /**
+   * The global Boots home itself (`~/.boots`) — the parent of `systems/`. Holds
+   * the cross-system records that belong to no single system, chiefly `map.md`.
+   */
+  bootsHome: string;
+  /**
+   * `<boots-home>/map.md` — Boots' standing answer to "what is this person
+   * actually building", the questions in play, and which systems serve each.
+   * One per user, above the systems, read by the router and `boots-rethink`.
+   */
+  mapFile: string;
 }
 
 /**
@@ -36,6 +47,8 @@ function buildHostPaths(): Record<string, HostPaths> {
         binDir: '$BOOTS_BIN',
         skillDir: '$BOOTS_ROOT/boots',
         systemsDir: '$BOOTS_HOME/systems',
+        bootsHome: '$BOOTS_HOME',
+        mapFile: '$BOOTS_HOME/map.md',
       };
     } else {
       const root = `~/${config.globalRoot}`;
@@ -46,6 +59,8 @@ function buildHostPaths(): Record<string, HostPaths> {
         skillDir: `${root}/boots`,
         // Boots home is fixed at ~/.boots regardless of where skills install.
         systemsDir: '~/.boots/systems',
+        bootsHome: '~/.boots',
+        mapFile: '~/.boots/map.md',
       };
     }
   }

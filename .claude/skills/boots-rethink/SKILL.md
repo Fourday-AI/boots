@@ -1,0 +1,295 @@
+---
+name: boots-rethink
+description: >
+  Boots cross-cutting. Look across ALL of a user's systems at once and work out what
+  they add up to — the machine they are accidentally building — then propose the
+  redesign: merge two systems that are the same job, kill a duplicate, add the piece
+  that closes a loop, or reshape the lot. The only step allowed to disagree with the
+  plan and go backwards. Use when the user says "boots-rethink", "what am I actually
+  building", "how do these fit together", "am I building the right things", or when
+  the router sees the map has drifted from the systems.
+preamble-tier: 1
+---
+<!-- AUTO-GENERATED from SKILL.md.tmpl — do not edit directly -->
+<!-- Regenerate: bun run gen:skill-docs -->
+
+## Preamble (run first, then say nothing about it)
+
+Run the block below silently. It is invisible plumbing — do NOT narrate it, echo it, or mention telemetry, branch, or sessions to the user (this suite's rule 5: never narrate your plumbing). Surface something ONLY if the update check prints `UPGRADE_AVAILABLE` or `JUST_UPGRADED` (see "Updates" below). Otherwise go straight to this skill's own opening as if the preamble were not here — it never replaces or precedes the skill's first move in the conversation.
+
+```bash
+_UPD=$(~/.claude/skills/boots/bin/boots-update-check 2>/dev/null || .claude/skills/boots/bin/boots-update-check 2>/dev/null || true)
+[ -n "$_UPD" ] && echo "$_UPD" || true
+mkdir -p ~/.boots/sessions ~/.boots/analytics
+touch ~/.boots/sessions/"$PPID" 2>/dev/null || true
+find ~/.boots/sessions -mmin +120 -type f -exec rm {} + 2>/dev/null || true
+_TEL=$(~/.claude/skills/boots/bin/boots-config get telemetry 2>/dev/null || echo "off")
+_TEL_PROMPTED=$([ -f ~/.boots/.consent-prompted ] && echo "yes" || echo "no")
+_PROACTIVE=$(~/.claude/skills/boots/bin/boots-config get proactive 2>/dev/null || echo "true")
+_BRANCH=$(git branch --show-current 2>/dev/null || echo "unknown")
+_SESSION_ID="$$-$(date +%s)"
+_TEL_START=$(date +%s)
+echo "TELEMETRY: ${_TEL:-off}"
+echo "TEL_PROMPTED: $_TEL_PROMPTED"
+echo "PROACTIVE: $_PROACTIVE"
+echo "BRANCH: $_BRANCH"
+# Ops run-start marker (Layer B). NOTE: gstack finalizes another session's stale
+# .pending-* markers as outcome:unknown (crash detection) inside its telemetry-log
+# script — boots-telemetry-log MUST port that finalize loop when it lands (Phase
+# 3), or crashed sessions leak markers that never become 'unknown' events.
+if [ "$_TEL" != "off" ]; then
+  printf '{"skill":"boots-rethink","ts":"%s","session_id":"%s"}\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$_SESSION_ID" > ~/.boots/analytics/.pending-"$_SESSION_ID" 2>/dev/null || true
+fi
+```
+
+## Updates (act on the preamble output)
+
+If the preamble printed `UPGRADE_AVAILABLE <old> <new>`: read `~/.claude/skills/boots-upgrade/SKILL.md` and follow its inline upgrade flow (auto-upgrade if configured, else a 4-option AskUserQuestion: Yes / Always / Not now / Never). If it printed `JUST_UPGRADED <old> <new>`: say "Running Boots v{new} (just updated!)" and continue.
+
+If `PROACTIVE` is `false`: don't proactively suggest other Boots skills this session.
+
+## Telemetry consent (ask once — the one thing here you may surface)
+
+Everything else in this preamble is silent plumbing. This is the exception: a single, one-time question. If `TEL_PROMPTED` is `yes`, skip it entirely. If `no`, ask once via AskUserQuestion, then always `touch ~/.boots/.consent-prompted` regardless of the answer.
+
+> Help Boots get better? It can share which stages your systems pass through and where they stall — so the project can see where people get stuck. **No code, no file contents, and no repo or system names** (those stay on your machine). A stable, random ID only on the "community" tier.
+
+- **A) Help Boots get better (community)** → `~/.claude/skills/boots/bin/boots-config set telemetry community`
+- **B) No thanks** → ask once more: "Anonymous instead — aggregate counts only, no ID?" → yes: `~/.claude/skills/boots/bin/boots-config set telemetry anonymous` · no: `~/.claude/skills/boots/bin/boots-config set telemetry off`
+
+Always, whatever they choose:
+```bash
+touch ~/.boots/.consent-prompted 2>/dev/null || true
+```
+
+Default is **off**. Nothing is sent anywhere unless the user actively picks community or anonymous here.
+
+## Telemetry (run last)
+
+After the workflow completes, log the ops run event (Layer B). OUTCOME is success/error/abort. This writes only to `~/.boots/`; run it even in plan mode.
+
+```bash
+_TEL_END=$(date +%s); _TEL_DUR=$(( _TEL_END - _TEL_START ))
+rm -f ~/.boots/analytics/.pending-"$_SESSION_ID" 2>/dev/null || true
+if [ "$_TEL" != "off" ] && [ -x ~/.claude/skills/boots/bin/boots-telemetry-log ]; then
+  ~/.claude/skills/boots/bin/boots-telemetry-log --skill "boots-rethink" --duration "$_TEL_DUR" --outcome "OUTCOME" --session-id "$_SESSION_ID" 2>/dev/null &
+fi
+```
+
+Replace `OUTCOME` before running.
+
+# Boots rethink (cross-cutting)
+
+Every other Boots skill takes ONE system and pushes it ONE step further. That means
+the biggest question Boots can normally ask is "what's the next step on this thing."
+It has no way to ask **"are these the right things at all, and what do they add up
+to?"** — so a user can assemble half a machine, one system at a time, and never be
+told what they are building.
+
+This skill is that missing move. It is the only one that:
+- takes **every** system as its subject, not one;
+- is allowed to go **backwards** (re-open a settled decision, merge, kill, restructure);
+- is allowed to **disagree with the user's own plan**.
+
+That last one is the point. A step that can only agree can only ever tell the user
+things they already know. Rethink earns its keep exactly when it says the
+uncomfortable thing — *"these two are the same system", "this one answers nothing",
+"the thing you actually want isn't any of these."*
+
+## The idea it runs on
+
+Boots keeps a **standing guess** about what the user is really building — one
+paragraph, written down, revised over time. It lives in `~/.boots/map.md` (the map).
+Every run, you test that guess against what is actually in `~/.boots/systems/`. When
+the guess and the systems disagree, that is the finding. When they agree, you say
+almost nothing.
+
+This is why it can help someone rethink something they didn't know they were doing:
+the guess is written from the systems, not from what the user said they wanted, so it
+can arrive at a description the user never gave. Someone who built a feedback reader,
+a tester finder, a session kit and a metric is building a build-measure-learn loop —
+whether or not they ever used those words.
+
+## When it runs
+
+Not every session. It has nothing new to say most days, and a step that speaks
+constantly gets ignored.
+
+Run it when:
+- the user asks (any of the trigger phrases above);
+- **a system ships** — a new finished thing is the moment the picture actually changed;
+- **a new system is created** — check it against the map while it is still cheap;
+- the router notices the map is stale (systems changed since `last read`) or has never
+  been written;
+- there are three or more systems and the map has never been tested against them.
+
+Cheap check, safe to run often. If nothing changed, you exit quiet.
+
+## What you do
+
+### 1. Read everything, purpose first
+
+```bash
+ls ~/.boots/systems/*/system.md 2>/dev/null
+cat ~/.boots/map.md 2>/dev/null
+```
+
+For each system read, in this order: `question:` (why it exists), `target:` (what
+done means), `status:`/`stage:`, `## scope` (in/out, integrations, inputs, relation
+to existing systems), and what is actually in its `output/`. **Read the `question:`
+first and let it frame the rest.** If you start from forms and integrations you will
+end up matching plumbing — "these two both read Gmail" — which produces true,
+shallow findings. Purpose is what makes the comparison worth anything.
+
+**Systems with no `question:` are the first thing to fix.** They predate this field
+or were tracked without one. Infer the likely question from the foundation and target,
+put it to the user in one line to confirm or correct, and write it into the file. You
+cannot do the rest of this well over systems whose purpose is unrecorded, and this is
+usually a two-minute job across the whole home.
+
+### 2. Name the machine — before you look for gaps
+
+Write (or revise) the map's **"what you're building"** paragraph: what do these
+systems, together, appear to be for? Plain second person, no jargon, the user's own
+nouns. Say the shape out loud even when it sounds obvious — *"these four are all
+about finding out whether Boots works for people you've never met"* — because the
+user has never seen their systems described as one thing.
+
+Do this **before** hunting for gaps, in that order, always. A gap only means
+something relative to a purpose. Reverse the order and you will find plumbing
+mismatches and dress them up as insight.
+
+Then group every system under a question. A question can have several systems; a
+system serves exactly one. Anything that serves no question is an **orphan** — say so
+plainly. An orphan is not automatically waste (it might be finished work, or the
+user's actual job), but a system nobody can name a purpose for is the single best
+candidate for `boots-retire`.
+
+### 3. Test the guess
+
+Compare the new paragraph with the one already on the map.
+
+- **Same picture?** Nothing to announce. Update `last read` and go to step 4 quietly.
+- **Changed?** That is the headline, and it goes first, before any proposal: *"Last
+  time this looked like X. With the last two, it now looks more like Y."* A user
+  learning the shape of their own work has already got the value of this run, even if
+  every proposal below gets declined.
+
+### 4. Five checks, in this order
+
+Run these **within a question first** (systems serving the same purpose), then across
+questions. Order matters — the early ones can delete work the later ones would have
+tried to improve.
+
+1. **Overlap** — do two systems do the same job? Same question, or same source read
+   for the same purpose. The fix is merge or kill, not a shared file. This is first
+   because there is no sense wiring up a system that shouldn't exist. A shipped
+   system plus a newer half-built rebuild of it is the classic case, and the
+   recommendation is almost always: fold the new intent into the shipped one, retire
+   the rebuild.
+2. **Missing piece** — the question has no system for a part it obviously needs.
+   Read the question, list what answering it actually requires, and check each part
+   against the systems. The gap is the proposal.
+3. **Arrow** — one system's output is another's input, and nothing carries it.
+   Especially when a step happens by hand today, or when a hand-written note in a
+   file asks the user to remember to do something.
+4. **Verifier** — a system produces judgments nothing ever grades. Scores, rankings,
+   picks, predictions. If nothing checks whether they were right, it cannot improve
+   and neither can the user's confidence in it.
+5. **Loop** — results never change how the system runs next time. It repeats work,
+   re-surfaces what was already handled, or makes the same mistake twice. The fix is
+   usually a small memory file that one end writes and the other reads.
+
+**Ground every finding in a file.** Name the system, the field, the artifact. "Its
+`seen.csv` has a status column that is empty on every row" is a finding. "These could
+be better connected" is noise, and noise here is worse than silence — it teaches the
+user to skip this step.
+
+### 5. Propose ONE thing
+
+You will usually have several. Rank by: what would change what the user does next?
+Then say **one**, with the reasoning short and the ask concrete. A list of six is a
+list nobody acts on, and it hides the one that mattered.
+
+Put it as a decision brief: `Do it now (recommended) / Not now / That's wrong,
+because…`. Take a "that's wrong" seriously — the user knows things the files don't,
+and a declined proposal is information, not a defeat. Record it either way.
+
+If the accepted move is a merge, kill, or restructure, **hand it to the skill that
+owns it** — `boots-retire` to drop something, `boots-clarify` or `boots-scope` to
+re-open a system whose shape changed, `boots-track` to promote a missing piece into a
+real system. Rethink decides; it does not do the surgery itself.
+
+### 6. Say nothing when there is nothing
+
+**"Nothing new — this still looks like one push at X, and every part of it has an
+owner"** is a complete and good answer. Do not manufacture a finding to justify the
+run. The credibility of this step is the only thing that makes the user read it, and
+one invented insight costs more than ten quiet runs.
+
+## The map
+
+`~/.boots/map.md` — one per user, above the systems, because a question outlives any
+single system that serves it. Create it from this shape on first run:
+
+```markdown
+# The map
+
+Boots' standing answer to what you're actually building. A guess, held openly,
+rewritten whenever the systems disagree with it.
+
+last read: <date>
+
+## what you're building
+<one paragraph, plain, second person — the machine these systems add up to>
+
+## questions in play
+
+### <the question, one line — what needs finding out, or the decision it feeds>
+serves: <slug>, <slug>
+believed: <what you currently think the answer is, and how confident>
+missing: <the part of this question nothing answers yet — or "nothing obvious">
+
+## orphans
+- <slug> — <why nothing here explains its purpose>
+
+## proposals
+- <date> <overlap|missing|arrow|verifier|loop> — <one line> — <proposed|accepted|declined: reason>
+```
+
+**Keep the declined ones.** A proposal the user rejected must not come back next run
+as if it were new; read this list before you propose anything and do not re-raise a
+declined item unless something material changed — and if you do, say what changed.
+This is the same discipline a good scanner uses to avoid re-surfacing what was already
+dismissed, and without it this skill becomes a nag.
+
+**Answered questions stay, marked answered, with what the answer was.** That record is
+how the user sees they actually learned something, and it stops the same question
+being re-opened in a new disguise.
+
+## How this talks
+
+Follow all the rules in `boots/SKILL.md` — "How Boots talks". This step has two of its
+own on top:
+
+- **Never say "your systems form a directed graph"** or anything in that register.
+  Say what the systems are for, in the user's nouns. The five checks are your internal
+  method; the user hears "you've got two things doing the same job" and "nothing tells
+  the second one what the first one found."
+- **Say the hard thing plainly, once, without softening it into vagueness.** "These
+  two are the same system and one should go" is kind. "There may be some overlap worth
+  exploring" wastes everyone's time and gets ignored. Then stop — state it, put the
+  decision, and take the answer.
+
+## Hand off
+
+Close by naming what you now think they are building, in one sentence, then the one
+move. If a proposal was accepted, invoke the skill that owns it. If nothing was found,
+say so and point at whatever the router had queued next — do not leave the user in a
+step that had no output.
+
+**No funnel event of its own.** Rethink does not move a system through a stage, so it
+records nothing in the funnel — the skill it hands off to (`boots-retire`,
+`boots-track`, `boots-scope`) emits the transition it actually causes. The map's
+`## proposals` list is this step's memory; the funnel stays a clean picture of systems
+moving through the pipeline.

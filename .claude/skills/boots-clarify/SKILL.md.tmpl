@@ -51,6 +51,13 @@ in the AskUserQuestion format from `boots/SKILL.md`.
    the real threads back to them in the chat. The ambition they keep circling is the
    strongest evidence you have.
 
+   **Also read `{{MAP_FILE}}` if it exists** (Boots' standing answer to what this
+   person is building overall, and the questions they already have in play). If this
+   new ambition serves a question that is already on the map, say so in one plain
+   line — "this sounds like part of the same push as X" — and note the connection;
+   you will record it as the system's `question:`. That is the cheapest moment there
+   is to notice you are starting a second limb of something you already have.
+
 3. **Draft the forcing answers from the evidence, then confirm them — don't ask
    cold.** The forcing questions are: who uses the output (a real name), what
    they do today instead, the one thing they would miss most if it broke, the
@@ -82,6 +89,23 @@ in the AskUserQuestion format from `boots/SKILL.md`.
        help if it knows what you actually look for. I can take a first pass at writing
        that up from what you tell me, and you fix it."** That is rule 6; naming it
        here is what lets scope and build carry it through.
+   - **What is this FOR — what do you need to find out, or what decision does it
+     feed?** This is the one question about *why the system exists* rather than what
+     it does, and it is the field the rest of Boots reads to see how your systems fit
+     together. Everything else in this step describes the machinery; this describes
+     the point. Ask it plainly — **"Say this one gets built and works perfectly. What
+     does that let you find out, or decide, that you can't today?"** — and keep
+     pushing until the answer names a real thing, not a restatement of the build.
+     "It gives me a ranked shortlist of testers" is the *output*, not the answer. The
+     answer is "I need to know whether this works for people I've never met." Test it
+     the same way every time: **if the system worked perfectly and you learned or
+     decided nothing new, the answer is wrong — dig again.**
+
+     Then record it in one line as `question:`. Keep it short and in their words.
+     Two systems that share a question are two limbs of one job, and that is
+     invisible to Boots unless this line exists — it is what later lets Boots say
+     "these four are all the same push" or "you already built this." Without it the
+     only thing Boots can compare across systems is plumbing.
    - **What does it do for you vs hand back?** Draw the autonomy line explicitly.
      What should the AI do on its own in the background (read the brand, fetch the
      material, draft the first pass) versus stop and hand to the user for a taste
@@ -121,6 +145,8 @@ platform: claude-code
 form: (decided at scope)
 next_step: run boots-scope to cut this to its smallest useful version and pick a form
 target: n/a
+question: <what this needs to find out, or the decision its output feeds — one line, their words>
+
 
 ## now
 last worked: <date>, this chat
@@ -132,8 +158,14 @@ next physical action: cut it to the smallest version worth building, and pick it
 <the paragraph — the same text you showed in the chat>
 
 ## log
-- <date> clarify, foundation written from <N> threads of evidence
+- <date> clarify, foundation written from <N> threads of evidence; question: <the one line>
 ```
+
+**Then add it to the map.** Append the system under its question in `{{MAP_FILE}}`
+(create the file from the shape in `boots/SKILL.md` if it does not exist yet). If the
+question is new, add it as a new question with this system as its only limb. This is
+two lines of upkeep and it is what makes the whole set legible later — a system whose
+question never reaches the map is a system nothing can reason about.
 
 Append a `sessions/<date>_<label>.md` synthesis before the chat ends, and keep `##
 now` current if this chat goes further than clarify (continuity contract).

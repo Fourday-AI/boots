@@ -46,8 +46,11 @@ boots/
 │   ├── boots-verify/
 │   ├── boots-ship/
 │   ├── boots-prospect/     # cross-cutting skills (any time): prospect · track · surface ·
-│   ├── boots-track/        #   extract · retire · observe
+│   ├── boots-track/        #   rethink · extract · retire · observe
 │   ├── boots-surface/
+│   ├── boots-rethink/      # the cross-SYSTEM step: reads every system + ~/.boots/map.md,
+│   │                       #   names what they add up to, proposes merges/kills/missing
+│   │                       #   pieces. Only step that goes backwards or disagrees.
 │   ├── boots-extract/
 │   ├── boots-retire/
 │   ├── boots-observe/      # hand-authored (no .tmpl) — edit SKILL.md directly
@@ -113,6 +116,8 @@ product-facing changes.
     advances a system through the pipeline (Layer A telemetry).
   - `{{FUNNEL_ROLLUP}}` — the read-side instruction board skills run to fold flow/staleness in.
   - `{{BIN_DIR}}` — host-appropriate path to `boots/bin/`.
+  - `{{MAP_FILE}}` / `{{BOOTS_HOME}}` — the cross-system record (`~/.boots/map.md`) and its
+    parent. Same path-seam discipline as `{{SYSTEMS_DIR}}`: defined once in `resolvers/types.ts`.
 - `hosts/` — per-host config (`claude.ts` is default/primary, `codex.ts` for external).
   Host config drives frontmatter mode (allow/denylist), path rewrites, and metadata gen.
   **This is the seam for supporting more AI tools:** add a host by creating `hosts/<name>.ts`
@@ -127,11 +132,31 @@ A system moves through stages, each a skill, each reading/writing one state file
 
 ```
 clarify → scope → build → review → verify → ship        (review→verify→ship = "the closer")
-cross-cutting, any time: prospect · track · surface · extract · retire · observe
+cross-cutting, any time: prospect · track · surface · rethink · extract · retire · observe
 ```
 
 - `boots` is the **router** — reconciles every system's recorded state against what's
   actually on disk (reality wins over stale notes), then gives the single next step.
+- **Every pipeline stage takes ONE system and moves it ONE step FORWARD.** That is
+  deliberate, and it is also the suite's structural blind spot: a forward, single-system
+  pipeline can never ask *"are these the right things, and what do they add up to?"* —
+  so a user can assemble half a machine one system at a time and never be told what the
+  machine is. `boots-rethink` is the answer to that, and the only skill that (a) takes
+  every system as its subject, (b) may go backwards (merge, kill, re-open a settled
+  decision), and (c) may disagree with the user's plan. If you add a skill, keep this
+  property intact: don't teach a forward stage to restructure the set behind the user's
+  back, and don't make rethink do the surgery itself — it decides, then hands to
+  `boots-retire` / `boots-track` / `boots-scope`.
+- **Three fields carry the cross-system view, and they are easy to conflate:**
+  `target:` = what *done* looks like (proof this system works). `question:` = *why it
+  exists* — what the user needs to find out, or the decision its output feeds. Only
+  `question:` makes systems comparable by purpose; without it the only thing two systems
+  share is plumbing ("both read Gmail"), which yields true-but-shallow findings. Above
+  both sits `~/.boots/map.md` (**the map**): Boots' standing guess at what the user is
+  actually building, the questions in play, which systems serve each, and a proposals
+  list that *keeps declined items* so a rejected idea never returns as if it were new.
+  The map lives above `systems/` because a question outlives the systems that serve it —
+  shipping a system does not answer the question that caused it.
 - State lives in the global Boots home at `~/.boots/systems/<slug>/system.md` (header
   fields + `## now` pickup block + `## log`), plus a `sessions/` folder — **not per-repo.**
   A system is the user's work and must be findable from any directory, so its records have

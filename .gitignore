@@ -43,6 +43,7 @@ node_modules/
 !/.claude/skills/boots-prospect/
 !/.claude/skills/boots-track/
 !/.claude/skills/boots-surface/
+!/.claude/skills/boots-rethink/
 !/.claude/skills/boots-extract/
 !/.claude/skills/boots-retire/
 !/.claude/skills/boots-observe/

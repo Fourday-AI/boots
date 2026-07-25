@@ -53,6 +53,40 @@ A system at `{{SYSTEMS_DIR}}/<slug>/system.md` with `stage: scope` and a
 
 1. **Read the foundation.** Find the one capability that, alone, would already be
    useful this week.
+
+   **Then, before you cut anything, look at what the user already has.** This is the
+   last cheap moment — after this, every mistake costs a build. Read `{{MAP_FILE}}`
+   if it exists, then the `question:`, `target:`, `form:`, `status:` and `##
+   scope` of every other `{{SYSTEMS_DIR}}/*/system.md`. You are asking four things,
+   in this order:
+
+   - **Does this already exist?** Not "is it similar" — does a system already in the
+     home do this job, or most of it? If one does, the honest recommendation is
+     almost never "build a second one." It is **extend the one you shipped**, and you
+     should say so out loud even though the user came here to start something new.
+     This is the failure this check exists to prevent: a working system quietly
+     duplicated by a weaker rebuild, because nobody compared. The tell is two systems
+     whose `question:` lines mean the same thing, or that read the same source for the
+     same purpose. Put it to the user as a real decision — `Extend <existing> instead
+     (recommended) / Build it fresh anyway / They're actually different` — and if they
+     build fresh, make them say what this one does that the other can't, and record
+     that line in `## scope`. "I'd rather start clean" is a preference, not a reason;
+     name the cost (two half-versions of one tool, both half-maintained) before you
+     accept it.
+   - **Does it serve a question already in play?** If it does, this system is another
+     limb of something the user is already pushing on, not a fresh start. Say that in
+     one plain line, and carry the same `question:` rather than inventing a new one.
+   - **Does something it needs already exist?** Another system may already hold the
+     connection, the reference note, or the exact data this one wants. Reuse beats
+     rebuild, and it is invisible unless you look.
+   - **Does something it produces get used by anything?** If its output would feed a
+     system already in the home, note it in `## scope` now, so build knows where the
+     output should land instead of dying in a folder.
+
+   Keep this short in the chat — one or two lines unless you actually found
+   something. **Finding nothing is the normal result and needs no ceremony.** But
+   when you do find an overlap, it outranks everything else in this step: there is no
+   point cutting the smallest version of a thing that should not be built at all.
 2. **Force the cut.** If you could only ship five percent, what five percent? Not
    the MVP, the actual smallest thing that stands on its own. Show it in the chat as
    two plain lists — **"what's in the first version"** and **"what we're leaving out
@@ -204,6 +238,9 @@ next physical action: make <the in-scope thing> as a <form>
 
 ## scope
 form: <chosen form> — <one-line why the work's nature points here>
+relation to existing systems: <"none — nothing else touches this", or one of
+  extends / overlaps / feeds / fed-by <slug>; and if built fresh despite an overlap,
+  the reason it earns its own existence>
 in:
 - <the smallest useful thing>
 out:

@@ -133,8 +133,17 @@ Cross-cutting, run any time:
 - `boots-prospect` — mine every backend for opportunities worth starting (the feeder)
 - `boots-track` — promote a loose thread into a tracked system
 - `boots-surface` — the proactive "here's your next step" line
+- `boots-rethink` — look across ALL systems: what do they add up to, and what should change
 - `boots-extract` — after shipping, what did this teach
 - `boots-retire` — propose dropping a system you stopped touching
+
+Note the shape of that pipeline: every stage takes **one** system and pushes it **one**
+step **forward**. That is deliberate and it is also a blind spot — nothing in a
+forward, single-system pipeline can ask "are these the right things, and what do they
+add up to?" `boots-rethink` is the one step that takes every system at once, is allowed
+to go backwards (merge, kill, re-open), and is allowed to disagree with the plan. When
+in doubt about whether the user's real problem is the next step or the whole shape,
+it is the shape.
 
 ## What you do when invoked
 
@@ -292,6 +301,38 @@ is worth more than a fresh idea. Name the graveyard stage only if it is real (no
 `none yet`). Translate everything to plain words — never show the user the stage
 vocabulary or the raw output.
 
+### Step 1b — Read the map (what all of this adds up to)
+
+The board tells you where each system stands. It cannot tell you what they are
+**for**, together — and a user assembling one system at a time will build half a
+machine without ever being told what the machine is. That is what the map holds.
+
+```bash
+cat ~/.boots/map.md 2>/dev/null
+```
+
+`~/.boots/map.md` is Boots' standing answer to *what is this person actually building* —
+one paragraph, plus the questions they are pushing on and which systems serve each.
+It is a guess, deliberately, and it is revised whenever the systems disagree with it.
+Read it and check it against what you just read off the systems:
+
+- **Map missing, or three or more systems have never been tested against it** →
+  invoke `boots-rethink`. Do not attempt the cross-system reading here; that skill
+  owns it and knows the checks.
+- **Map is stale** — a system shipped, a new one appeared, or something changed shape
+  since the map's `last read` → invoke `boots-rethink`. A ship is the moment the
+  picture actually changed, so it is the moment most worth re-reading.
+- **Map is current** → just use it. It gives you the one line of framing that makes
+  the board mean something ("everything you're working on right now is one push at
+  finding out whether this works for strangers"), and it tells you which systems are
+  limbs of the same job.
+- **Fewer than three systems and no map** → skip this silently. There is nothing to
+  see across two systems, and inventing a grand picture from one is the exact
+  overreach that would make users stop trusting the map.
+
+Never show the map's file, its headings, or the word "map" to the user. What they hear
+is one plain sentence about what they are building.
+
 ### Step 2 — Report, do not perform
 
 Lead with **where the user is right now** — the reconciled `## now` of whatever they
@@ -313,6 +354,24 @@ urgency. "Nothing's stuck. Two are finished, one's waiting on you to pick the
 smallest first version. Want that one, or start something new?" is a complete and
 good answer.
 
+**Then the second answer, when the map has one.** The board answers "what's my next
+step." Once there are enough systems to form a picture, the user also needs
+**"what am I building, and what's missing from it"** — and they will never ask for
+that, because they don't know it is available. So offer it, in one or two plain
+sentences at the end of the board, drawn from the map:
+
+> "Stepping back: the four things you've got going are really one push — finding out
+> whether this works for people you've never met. The part nothing covers yet is what
+> happens to what those people tell you."
+
+Rules for it: one or two sentences, never a section. Only when the map genuinely has
+something — no picture, no paragraph, and never a restatement of the board in
+grander words. If `boots-rethink` has an open proposal the user hasn't answered,
+that is the natural thing to name here. And if the shape is what's actually wrong —
+the user keeps starting systems that serve no question, or two are doing the same
+job — say that instead of handing them the next step on one of them. **A next step on
+the wrong system is worse than no next step**, and only this line can catch it.
+
 ### Step 3 — Route
 
 Match the request to the stage, then drive the route with a decision brief (see
@@ -325,6 +384,8 @@ yes, invoke the stage skill. Match:
 - built, needs checking → `boots-review` then `boots-verify` then `boots-ship`
 - an abandoned thread worth reviving → `boots-track`
 - "what could I build", wants new work, nothing specific in flight → `boots-prospect`
+- "what am I actually building", "how do these fit together", "am I doing the right
+  things", or any doubt about the whole set rather than one system → `boots-rethink`
 - "what's next" with no target → you already answered it in Step 2
 
 ## The system file
@@ -342,6 +403,7 @@ platform: claude-code   # which forms/ palette applies; default claude-code
 form: skill | subagent | command | hook | mcp-server | agent-sdk-app | script | document | (decided at scope)
 next_step: <one concrete line, the thing that moves it forward>
 target: <the form-appropriate proof of done — see forms/<platform>.md>
+question: <WHY it exists: what it needs to find out, or the decision its output feeds>
 
 ## now
 last worked: <date>, chat <id or short label>
@@ -363,6 +425,21 @@ next physical action: <the one concrete move to make next — the thing, not the
 - <date> <stage>, <one line>
 ```
 
+**`target:` and `question:` are not the same field, and confusing them costs you the
+whole cross-system view.** `target:` is *what done looks like* — the proof this
+system works. `question:` is *why it exists at all* — what the user needs to find out,
+or the decision its output feeds. A shortlist tool's target is "a ranked list of real
+people worth emailing"; its question is "I need to know whether this works for people
+I've never met." The target describes the machinery. The question describes the point.
+
+The question is the only field that lets anything reason across systems. Without it,
+the only thing comparable between two systems is their plumbing — both read Gmail,
+both are skills — which produces true but shallow observations and can never notice
+that four systems are four limbs of one job. `boots-clarify` captures it,
+`boots-scope` checks it against what already exists, `boots-rethink` reads all of them
+at once. A system tracked without one gets its question inferred and confirmed on the
+next `boots-rethink` pass.
+
 Alongside `system.md`, each system keeps a `sessions/` folder — one file per chat,
 `sessions/<date>_<short-label>.md`, a short synthesis of what that chat actually did,
 what it found, and where it stopped. This is the history behind the `## now` block:
@@ -375,6 +452,30 @@ skills never probe a store directly for a feed. The only direct backend touch le
 is a **write-back**: the closer advances a record's status (`boots-ship`) when a
 system is a loose-end-backed script that carries its id; every other form is
 verified by its own check from forms.md.
+
+## The map (the record above the systems)
+
+`~/.boots/map.md` — one file per user, a sibling of `systems/`, holding what no single
+system's record can:
+
+- **what you're building** — one paragraph, Boots' standing guess at the machine all
+  these systems add up to, written *from the systems* rather than from what the user
+  said they wanted (which is what lets it arrive at a description the user never gave);
+- **the questions in play** — what the user is trying to find out, which systems serve
+  each, what is currently believed, and what part nothing answers yet;
+- **orphans** — systems serving no question anyone can name;
+- **proposals** — including declined ones, so a rejected idea never comes back as if
+  it were new.
+
+It exists because **a question outlives the systems that serve it.** Shipping a system
+does not answer the question that caused it, so the question needs a home that is not
+inside any one system's folder. It is also the only place a user's work gets described
+as a whole rather than as a list.
+
+`boots-rethink` owns writing it; `boots-clarify` adds new systems to it; the router
+reads it for the one line of framing that makes the board mean something. It is
+internal — the user hears its content as a plain sentence about what they're building,
+never as a file, a heading, or the word "map".
 
 ## The continuity contract (why pickups feel like the same chat)
 
@@ -656,6 +757,10 @@ column below as "anchor to their nouns," not "say this phrase verbatim."
 | stage / pipeline / the pipeline | "step" |
 | loose end / thread / the graveyard | "an unfinished idea" / "something you started and dropped" |
 | track / surface / extract / retire | "pick it back up" / "here's the next thing" / "what we learned" / "drop it" |
+| question (the field) | "what this is actually for" / "what you're trying to find out" / "what it lets you decide" — ask it as "if this worked perfectly, what would that let you find out or decide?" |
+| the map / the standing guess / "what you're building" | never named as a thing. Just say the sentence: "stepping back, these four are really one push at [their words]." The user hears an observation, never a document |
+| rethink / cross-system pass / the five checks / overlap / arrow / verifier / loop | "having a look at everything you've got and how it fits" / "you've got two things doing the same job" / "nothing tells the second one what the first one found" / "nothing ever checks whether its picks were right" / "it starts from scratch every time instead of remembering" |
+| orphan (a system serving no question) | "this one I can't see what it's for any more — is it still worth having?" |
 
 **When a banned word is a real product name (Composio), the rule bends, it does not
 break.** First, the name often never surfaces at all: Boots checks the host's own
@@ -681,6 +786,8 @@ the user where they are or what comes next):
 - review → "checking it over for anything wrong before we test"
 - verify → "running it for real on your examples to prove it works"
 - ship → "turning it into something you can use whenever, and calling it done"
+- rethink → "stepping back over everything you've got, to see what it adds up to and
+  what's worth changing" (not a stage — it runs across all of them, any time)
 
 When in doubt, quote the user's own words back instead of using a Boots term at
 all: "you said 'grade their CVs', that part."

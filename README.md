@@ -232,12 +232,19 @@ A system moves through steps. Each step is a skill. Each one writes down what it
                                └───────── the closer ─────────┘
 
    run any time:
-   prospect · track · surface · observe · extract · retire
+   prospect · track · surface · rethink · observe · extract · retire
 ```
 
 After a system ships, `observe` keeps watching it — because shipping isn't the end. When Boots
 opens, it checks each live system is still working *and still giving the right answer* (not just
 that it ran), and evolves it with you.
+
+And every so often, `rethink` steps back over *all* of it. Each stage above moves one system one
+step forward — which means none of them can ask whether you're building the right things at all.
+People assemble a machine one piece at a time and never get told what the machine is. Rethink is
+the step that reads everything you have, says what it adds up to, and tells you when two of your
+systems are really the same job, or when the piece that would tie them together doesn't exist yet.
+It's the one part of Boots allowed to disagree with your plan.
 
 ### The stages
 
@@ -305,12 +312,22 @@ that it ran), and evolves it with you.
 <tr>
 <td>
 
-**`extract`** — After a system ships, captures what it taught, routes the lesson everywhere that fits, and asks whether it's a rule the tool itself must now obey.
+**`rethink`** — Steps back over everything you've built and works out what it adds up to. Tells you when two systems are doing the same job, when nothing carries what one found to the one that needs it, and when the piece that would finish the picture doesn't exist yet. The only part of Boots that argues with your plan.
 
 </td>
 <td>
 
+**`extract`** — After a system ships, captures what it taught, routes the lesson everywhere that fits, and asks whether it's a rule the tool itself must now obey.
+
+</td>
+</tr>
+<tr>
+<td>
+
 **`retire`** — Proposes dropping systems, rules, or tools that have gone cold, so your list stays honest and Boots can subtract, not only add.
+
+</td>
+<td>
 
 </td>
 </tr>
