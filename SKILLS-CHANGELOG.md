@@ -7,6 +7,60 @@ inferred from the diff, not written by hand. Each entry ends with a
 
 <!-- New entries go directly below this line. -->
 
+## [2026-07-25] Boots can see across all your systems, not one at a time
+**Boots now steps back over everything you've built, tells you what it adds up to,
+and says when two of your systems are really the same job — or when the piece that
+would tie them together doesn't exist yet.**
+
+Until now every step took one system and moved it one step forward. That meant Boots
+could always tell you your next step, but never whether you were building the right
+things at all — so you could assemble half a machine one system at a time and never
+be told what the machine was. Three changes fix that: each system now records *why*
+it exists (not just what done looks like), Boots keeps a running picture of what all
+your systems add up to, and a new step reads the whole set and proposes what to
+change. Scope also checks the set before you build, so a tool you already shipped
+doesn't get quietly rebuilt as a weaker second copy.
+
+### Added
+- **`boots-rethink` (new skill):** reads every system at once and works out what
+  they're for, together. Tells you when two are doing the same job, when nothing
+  carries what one found to the one that needs it, when a system's picks are never
+  checked against what actually happened, and when it repeats work it already did.
+  Proposes one change at a time, and remembers what you turned down so it never asks
+  twice. The only part of Boots allowed to disagree with your plan.
+- **`boots-clarify`:** now asks what a system is actually *for* — "if this worked
+  perfectly, what would that let you find out or decide?" — and records the answer.
+  It also spots when a new idea is really part of something you're already working
+  on, and says so before you start.
+
+### Changed
+- **`boots-scope`:** before cutting anything, it looks at what you already have. If a
+  system already does the job, it recommends extending that one rather than building
+  a second, and asks what the new one does that the old one can't. It also notices
+  when something you need already exists somewhere, or when this system's output
+  would feed one you already have.
+- **`boots` (the router):** after the usual board, it now adds a second answer when
+  there's enough to say one — what you're building overall, and what's missing from
+  it — in a sentence or two. It stays quiet when you have fewer than three systems.
+- **`boots-ship`:** finishing something is when the picture changes most, so a ship
+  now flags that the overall view is worth re-reading. Shipping a system doesn't
+  answer the question that caused it.
+- **`boots-track`:** a revived thread now records what it was for, alongside what it
+  was going to be.
+- **`README` / `setup` / `CLAUDE.md`:** document the new step, and the install block
+  now lists every skill (it had been missing `boots-observe` as well).
+
+### Fixed
+- **Privacy:** the new cross-system notes are ignored by git, so a record of what
+  you're building can never end up in a commit. This matters because Boots' own repo
+  and its working folder are the same directory when you install it the usual way.
+
+### Internal
+- New `{{MAP_FILE}}` / `{{BOOTS_HOME}}` template tokens, so the path is defined once
+  in `scripts/resolvers/types.ts` — the same seam discipline as `{{SYSTEMS_DIR}}`.
+
+_Tracked up to: bc764c6b23eb364d5517d55f994f697ef670c1f5
+
 ## [2026-07-23] End-to-end tests you can run in one command
 **Boots now has a repeatable test suite that proves the update check and the whole
 telemetry pipeline actually work — run it with one command.**
