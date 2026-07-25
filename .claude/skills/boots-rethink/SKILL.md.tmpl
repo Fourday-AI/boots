@@ -82,6 +82,14 @@ put it to the user in one line to confirm or correct, and write it into the file
 cannot do the rest of this well over systems whose purpose is unrecorded, and this is
 usually a two-minute job across the whole home.
 
+**Header fields wrap, so insert AFTER the last continuation line — not after the line
+that starts the field.** `target:` in particular usually runs to three or four lines,
+each continuation indented. Dropping `question:` in after the first line splits the
+value in half: `target:` is left reading as a truncated sentence and the remaining
+lines dangle, attached to nothing. Read to the end of the wrapped value first. Safest
+is to append `question:` as the **last** header field, immediately before the blank
+line preceding `## now`.
+
 ### 2. Name the machine — before you look for gaps
 
 Write (or revise) the map's **"what you're building"** paragraph: what do these
@@ -110,7 +118,47 @@ Compare the new paragraph with the one already on the map.
   learning the shape of their own work has already got the value of this run, even if
   every proposal below gets declined.
 
-### 4. Five checks, in this order
+### 4. Give the machine a home — it is a thing that can be built
+
+**This is the step that makes rethink constructive rather than an audit.** The
+paragraph you just wrote in step 2 is a *seed* — exactly the kind of raw sentence
+`boots-clarify` exists to turn into something buildable. Left in the map it is only a
+description. Put through clarify, the whole push becomes a system in its own right:
+one with a foundation, a scope made of the parts that are missing, and a next step.
+
+The user will almost never ask for this, because they have never thought of the
+overall push as a thing you could build — they think of it as the reason they are
+building other things. That is precisely why it is worth offering.
+
+**First: does a system already serve the whole push?** Usually one limb has quietly
+grown into it — the one whose question is the broadest, that the others feed. Check
+before you create anything. **If one exists, do NOT clarify a second** — that is the
+same duplicate mistake this skill exists to catch, and making it here would be
+indefensible. Instead propose that the existing system *absorb* the machine: its
+`question:` becomes the whole push's question, and the `missing:` lines you wrote
+against each question in step 2 become its scope. Hand it to `boots-scope` (or
+`boots-clarify` if its foundation no
+longer matches what it has become).
+
+**If nothing serves the whole push,** offer `boots-clarify` and hand it the step-2
+paragraph verbatim as the seed. Say it plainly: *"the thing all four of these serve
+isn't written down anywhere as its own thing — want to make it one?"*
+
+**The guard that keeps this honest.** A parent system that only restates its children
+is a label, not a system. If the clarified scope comes out as "the things the other
+systems already do," it has no work of its own — say so and drop it. A real one has
+scope the limbs do not cover: the missing pieces, the thing that ties them together,
+the part nobody owns. If step 3 found no missing pieces, there is nothing here to
+build, and the machine stays a paragraph on the map. That is a fine outcome; say it
+and move on.
+
+**Order note:** this comes BEFORE the five checks deliberately. Run the checks first
+and you will always lead with a merge or a deletion — those are certain and cheap,
+while building the missing piece is speculative, so subtraction wins any ranking it is
+entered into. Giving the machine a home is the move most likely to leave the user with
+something they did not have, so it gets first look.
+
+### 5. Five checks, in this order
 
 Run these **within a question first** (systems serving the same purpose), then across
 questions. Order matters — the early ones can delete work the later ones would have
@@ -140,27 +188,58 @@ tried to improve.
 be better connected" is noise, and noise here is worse than silence — it teaches the
 user to skip this step.
 
-### 5. Propose ONE thing
+### 6. Propose — one to make, and at most one to remove
 
-You will usually have several. Rank by: what would change what the user does next?
-Then say **one**, with the reasoning short and the ask concrete. A list of six is a
-list nobody acts on, and it hides the one that mattered.
+**The point of this step is to leave the user with a better machine, not a tidier
+one.** Removing a redundant system is real value, but it is subtraction wearing the
+clothes of insight — and if you only ever subtract, a user finishes a rethink with
+less than they started with and nothing new to build. That is the failure mode this
+step is written against.
 
-Put it as a decision brief: `Do it now (recommended) / Not now / That's wrong,
+So lead with **the constructive move**: the thing to build, connect, or give a home
+to. Then, only if you found one, **at most one removal**. Never open with the
+deletion, even when it is the most certain finding — certainty is not importance, and
+a merge is always more certain than a build because it needs no new work.
+
+If the only thing you have is a removal, say that plainly (*"nothing to add — but
+you're carrying a duplicate"*). Do not pad it with a speculative build to look
+balanced. One honest subtraction beats an invented addition.
+
+Keep it to those two. A list of six is a list nobody acts on, and it hides the one
+that mattered.
+
+Put each as a decision brief: `Do it now (recommended) / Not now / That's wrong,
 because…`. Take a "that's wrong" seriously — the user knows things the files don't,
 and a declined proposal is information, not a defeat. Record it either way.
 
-If the accepted move is a merge, kill, or restructure, **hand it to the skill that
-owns it** — `boots-retire` to drop something, `boots-clarify` or `boots-scope` to
-re-open a system whose shape changed, `boots-track` to promote a missing piece into a
-real system. Rethink decides; it does not do the surgery itself.
+**Hand every accepted move to the skill that owns it. Rethink decides; it does not do
+the surgery itself:**
+- something to **make** → `boots-clarify` (a new push with no system yet),
+  `boots-scope` (an existing system absorbing new work), or `boots-build` (a concrete
+  piece whose shape is already obvious — a memory file, a handoff, a grading column)
+- something to **drop** → `boots-retire`
+- a system whose **shape changed** → `boots-clarify` or `boots-scope`
+- a loose thread worth **tracking** → `boots-track`
 
-### 6. Say nothing when there is nothing
+`boots-build` is on that list deliberately. Some findings — "nothing writes the result
+back", "this column is never filled" — are a small concrete artifact, not a new
+system, and routing them through clarify+scope is ceremony that kills them. If you can
+name the file and what goes in it, go straight to build.
+
+### 7. Say nothing when there is nothing
 
 **"Nothing new — this still looks like one push at X, and every part of it has an
 owner"** is a complete and good answer. Do not manufacture a finding to justify the
 run. The credibility of this step is the only thing that makes the user read it, and
 one invented insight costs more than ten quiet runs.
+
+**But quiet is for when you found nothing — not for when you found something and
+didn't fancy raising it.** If you can name a gap concretely enough to write it in the
+proposals list, it is concrete enough to put to the user. "Worth doing later, once X
+happens" is a proposal with a trigger, and it belongs in a decision brief where the
+user can accept, decline, or defer it — not filed silently as something you noticed.
+Parking a real finding is the timid failure, and it is just as costly as noise: the
+run produces a tidy record and changes nothing about what the user does next.
 
 ## The map
 
@@ -189,8 +268,19 @@ missing: <the part of this question nothing answers yet — or "nothing obvious"
 - <slug> — <why nothing here explains its purpose>
 
 ## proposals
-- <date> <overlap|missing|arrow|verifier|loop> — <one line> — <proposed|accepted|declined: reason>
+- <date> <machine|overlap|missing|arrow|verifier|loop> — <one line> — <status>
 ```
+
+**`<status>` is one of exactly four**, and no others: `proposed` (put to the user,
+awaiting an answer), `accepted: <date>`, `declined: <reason>`, or
+`deferred until <the concrete trigger>`. Nothing else.
+
+**"noted" is not a status.** A finding recorded but never put to the user is the
+timid failure in written form — it makes the map look thorough while the user never
+got a decision to make. If you genuinely think a finding should wait, that is
+`deferred until <trigger>`, the trigger is a real observable event ("after the first
+three sessions are run", not "later"), and **you still say it out loud** so the user
+can overrule you. A deferral is a decision you propose, not one you take alone.
 
 **Keep the declined ones.** A proposal the user rejected must not come back next run
 as if it were new; read this list before you propose anything and do not re-raise a
