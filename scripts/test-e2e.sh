@@ -176,6 +176,42 @@ assert_has "rollup emits PIPELINE line" "PIPELINE" "$ROLL"
 assert_has "rollup lists the system"    "demo-sys" "$ROLL"
 
 # ─────────────────────────────────────────────────────────────────────────────
+sect "cross-system layer — map + question (offline)"
+# The cross-system skills (boots-rethink, and the map reads in boots/clarify/scope/ship)
+# are PROSE — whether they reason well can only be judged by running them. What IS
+# mechanically checkable are the invariants they depend on, and those are exactly the
+# ones that break silently: a path that stops resolving, or a private file that stops
+# being ignored. Both fail in ways no one would notice until harm was done.
+
+# X1 the map path resolves per host. Regression guard for adding a host and forgetting
+# the path seam — the map would then be written somewhere the skills never read.
+MAPC="$(grep -c '~/\.boots/map\.md' "$REPO/.claude/skills/boots-rethink/SKILL.md" 2>/dev/null || echo 0)"
+[ "$MAPC" -ge 2 ] && ok "map path resolved in boots-rethink (claude host)" \
+                  || bad "map path resolved in boots-rethink (claude host)" "found $MAPC refs to ~/.boots/map.md"
+
+# X2 no unresolved template tokens anywhere in the generated skills. A typo'd token
+# name renders literally and the instruction silently becomes nonsense.
+UNRES="$(grep -l '{{' "$REPO"/.claude/skills/boots*/SKILL.md 2>/dev/null | head -3)"
+assert_eq "no unresolved {{TOKENS}} in generated skills" "" "$UNRES"
+
+# X3 PRIVACY: map.md must be gitignored. ~/.boots is BOTH the clone and the runtime
+# home on a normal install, so a user's record of what they're building sits at the
+# repo root. If this ever stops being ignored, a `git add -A` publishes it.
+IGN="$(cd "$REPO" && git check-ignore map.md 2>/dev/null)"
+assert_eq "map.md is gitignored (privacy)" "map.md" "$IGN"
+
+# X4 every skill dir on disk is either a product skill (on the .gitignore allow-list)
+# or deliberately private. Catches a new product skill added without its `!` line —
+# it would be invisible to git and never ship.
+ALLOW="$(cd "$REPO" && grep -oE '^!/\.claude/skills/[a-z0-9-]+/' .gitignore | sed 's|^!/\.claude/skills/||;s|/$||' | sort)"
+TRACKED="$(cd "$REPO" && git ls-tree --name-only HEAD .claude/skills/ | sed 's|.*/||' | sort)"
+assert_eq "gitignore allow-list matches tracked skills" "$ALLOW" "$TRACKED"
+
+# X5 boots-rethink specifically is on the allow-list and tracked (the newest skill is
+# the one most likely to be missed).
+case "$ALLOW" in *boots-rethink*) ok "boots-rethink is on the allow-list" ;; *) bad "boots-rethink is on the allow-list" ;; esac
+
+# ─────────────────────────────────────────────────────────────────────────────
 if [ "$LIVE" -eq 1 ]; then
   sect "LIVE — update check against GitHub origin"
   if ! command -v gh >/dev/null 2>&1; then
