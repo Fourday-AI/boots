@@ -31,10 +31,9 @@ echo "TELEMETRY: ${_TEL:-off}"
 echo "TEL_PROMPTED: $_TEL_PROMPTED"
 echo "PROACTIVE: $_PROACTIVE"
 echo "BRANCH: $_BRANCH"
-# Ops run-start marker (Layer B). NOTE: gstack finalizes another session's stale
-# .pending-* markers as outcome:unknown (crash detection) inside its telemetry-log
-# script — boots-telemetry-log MUST port that finalize loop when it lands (Phase
-# 3), or crashed sessions leak markers that never become 'unknown' events.
+# Ops run-start marker (Layer B). If this session dies before it logs an end event,
+# the marker is left behind; the next boots-telemetry-log run finalizes any other
+# session's stale marker as outcome:unknown, so a crash is recorded, not lost.
 if [ "$_TEL" != "off" ]; then
   printf '{"skill":"boots-ship","ts":"%s","session_id":"%s"}\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$_SESSION_ID" > ~/.boots/analytics/.pending-"$_SESSION_ID" 2>/dev/null || true
 fi
@@ -107,8 +106,8 @@ stop and send it back. Ship assumes verify succeeded, it does not re-run it.
    - **hook** → wired in settings and confirmed firing
    - **MCP server** → connectable, its tools appear and answer
    - **Agent SDK app** → runnable with one documented command
-   - **script / CLI** → invocable from its entry point (a toolkit feature shows in
-     `python -m toolkit`)
+   - **script / CLI** → invocable from its entry point, and listed wherever that
+     entry point advertises its commands
    - **document** → the final file in its resting place, and something reads it
 2. **Heal the artifact against the gaps verify surfaced (self-healing). Do this
    before you close anything.** Verify recorded an `artifact_gaps:` list — everything
@@ -135,13 +134,11 @@ stop and send it back. Ship assumes verify succeeded, it does not re-run it.
    hosted connection, confirm it is registered at a scope that keeps the
    credential out of git and the connected account is still `ACTIVE`. A secret
    found here blocks the ship until it is moved out and rotated.
-4. **Record status where the system's model lives.** If this is a loose-end-backed
-   system in a feature-toolkit repo, advance the record so the graveyard reflects
-   it, otherwise skip this, it is optional:
-   ```bash
-   PY=.venv/bin/python; [ -x "$PY" ] || PY=python3
-   $PY -m toolkit records set-status <id> resumed 2>/dev/null || true
-   ```
+4. **Close the loop with wherever this came from.** Optional, and only if it applies:
+   if the system was promoted out of a loose-ends store, set that record's status so
+   the graveyard stops showing finished work as abandoned. Use the store's own
+   command, guarded so a missing or changed backend can never block a ship. No
+   store, or no id carried through → skip this silently.
 5. **Close the system file:**
    ```markdown
    status: shipped

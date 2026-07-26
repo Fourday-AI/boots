@@ -32,10 +32,9 @@ echo "TELEMETRY: ${_TEL:-off}"
 echo "TEL_PROMPTED: $_TEL_PROMPTED"
 echo "PROACTIVE: $_PROACTIVE"
 echo "BRANCH: $_BRANCH"
-# Ops run-start marker (Layer B). NOTE: gstack finalizes another session's stale
-# .pending-* markers as outcome:unknown (crash detection) inside its telemetry-log
-# script — boots-telemetry-log MUST port that finalize loop when it lands (Phase
-# 3), or crashed sessions leak markers that never become 'unknown' events.
+# Ops run-start marker (Layer B). If this session dies before it logs an end event,
+# the marker is left behind; the next boots-telemetry-log run finalizes any other
+# session's stale marker as outcome:unknown, so a crash is recorded, not lost.
 if [ "$_TEL" != "off" ]; then
   printf '{"skill":"boots-prospect","ts":"%s","session_id":"%s"}\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$_SESSION_ID" > ~/.boots/analytics/.pending-"$_SESSION_ID" 2>/dev/null || true
 fi

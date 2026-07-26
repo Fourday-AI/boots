@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Boots freshness gate — refuse a commit where a generated SKILL.md is out of
-# sync with its SKILL.md.tmpl. Mirrors gstack's CI dry-run check so a template
+# sync with its SKILL.md.tmpl. Mirrors the CI dry-run check so a template
 # and its output can never diverge. Enable once per clone:
 #   git config core.hooksPath .githooks
 #

@@ -203,7 +203,7 @@ stripped, hashed copy. The community view rides on the same data, aggregated.
   so live systems get watched every time you open Boots.
 
 ### Internal
-- Remote layer ported faithfully from gstack: local-first buffers, cursor sync
+- Remote layer: local-first buffers, cursor sync
   rate-limited to 5 min, a random (never machine-derived) installation id on the
   community tier only, repo names stripped and system names hashed client-side before
   upload, and Supabase edge functions + schema whose public key can only INSERT (a
@@ -411,7 +411,7 @@ _Tracked up to: c4c79b1955dbdc9e7241eddf6b8009138757a0c5_
 folder on your computer and what the tool does with what you put there — instead of
 handing you a raw path like `state/systems/<slug>/inputs/` and leaving you to guess.**
 
-Real feedback: during the fee-form build the ask to "put it in the /inputs folder"
+Real feedback: during a real first build the ask to "put it in the /inputs folder"
 didn't land — the user just dropped the spreadsheet somewhere and stalled, with no
 picture of where that folder lived or how a dropped file becomes a working system.
 The fix makes every place that hands off the folder do two things: describe how to
@@ -439,7 +439,7 @@ concrete nouns — "start with just the three accounts you watch" — instead of
 bare abstractions "smallest version," "shape," and "next batch" that a newcomer
 can't cash out.**
 
-Real feedback: during the fee-form build, the scope questions landed as noise —
+Real feedback: during a real first build, the scope questions landed as noise —
 "smallest version of *what*? shape of *what*?" The pipeline already swapped the
 internal jargon for plain words, but the replacements were themselves abstractions
 a first-timer doesn't yet hold (they don't know their idea has versions or a
@@ -526,11 +526,6 @@ tricks. This session also cut back most of the hardening layer added on 2026-07-
   what it finds. Read-only, reports the sources it can't read yet, and learns a new
   one on request. Backends plug in as adapters in `sources.md`, so supporting a new
   source never means editing the skill.
-- **oro-reel-scout:** new. Ranks freelance content editors applying to ORO on a
-  taste-first rubric — design eye and fashion-forward instinct decide it, editing
-  competence is only a floor. Opens each applicant's actual work rather than
-  grading from a description, and returns a shortlist with a one-line reason each.
-
 ### Changed
 - **boots-verify:** records an `artifact_gaps:` list — every workaround you
   performed that the tool didn't tell you to, every degraded substitute you reached
@@ -686,9 +681,9 @@ _Tracked up to: ac508adce07c69fec3b8314bae80cb5b8b2e2066_
 ## [2026-07-16] Genesis — version control + changelog set up
 **The boots skills now have a git history and an auto-generated changelog.**
 
-`boots-03` was put under version control (baseline `8bd097b`) and the
-`skills-changelog` skill was added, reverse-engineered from gstack's git-driven
-changelog generator. From the next session on, wrapping up with "skills-changelog"
+The skills were put under version control and the `skills-changelog` skill was
+added — a git-driven changelog generator. From the next session on, wrapping up
+with "skills-changelog"
 writes the entry for you.
 
 ### Added

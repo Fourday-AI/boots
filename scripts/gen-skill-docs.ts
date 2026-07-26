@@ -2,7 +2,7 @@
 /**
  * Generate SKILL.md files from SKILL.md.tmpl templates.
  *
- * Pipeline (lean port of gstack's gen-skill-docs.ts):
+ * Pipeline:
  *   read .tmpl → resolve {{PLACEHOLDERS}} → host frontmatter/path transforms → write .md
  *
  * Flags:
@@ -10,7 +10,7 @@
  *   --dry-run                   generate in memory; exit 1 if any output is stale
  *                               (the CI freshness gate — templates + outputs can't drift)
  *
- * Stripped vs gstack (add back only if a real need appears): catalog-trim,
+ * Deliberately omitted (add back only if a real need appears): catalog-trim,
  * on-demand sections, voice-triggers, llms.txt, model overlays, out-dir.
  */
 
@@ -118,7 +118,7 @@ function transformFrontmatter(content: string, host: string): string {
 }
 
 /** Condense a description to a <=120-char lead for external-host metadata,
- * truncating on a word boundary (matches gstack's condenseOpenAIShortDescription
+ * truncating on a word boundary (matches the condenseOpenAIShortDescription
  * — a hard slice mid-word reads badly in the host's skill picker). */
 function condenseShortDescription(description: string): string {
   const LIMIT = 120;

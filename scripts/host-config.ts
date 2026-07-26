@@ -1,12 +1,12 @@
 /**
- * Declarative host config system (lean port of gstack's hosts/*.ts).
+ * Declarative host config system.
  *
  * Each supported host (Claude, Codex, …) is a typed HostConfig in hosts/*.ts.
  * Adding a host later = drop a new hosts/<name>.ts + register it in hosts/index.ts,
  * then `bun run gen:skill-docs --host <name>`. No per-skill rework.
  *
  * This is deliberately trimmed to only what the generation pipeline reads.
- * gstack's HostConfig also carries runtimeRoot / sidecar / install / co-author
+ * The ancestor HostConfig also carried runtimeRoot / sidecar / install / co-author
  * fields that belong to its bash setup, not the generator — Boots' setup owns
  * those separately, so they're omitted here.
  */

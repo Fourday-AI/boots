@@ -30,10 +30,9 @@ echo "TELEMETRY: ${_TEL:-off}"
 echo "TEL_PROMPTED: $_TEL_PROMPTED"
 echo "PROACTIVE: $_PROACTIVE"
 echo "BRANCH: $_BRANCH"
-# Ops run-start marker (Layer B). NOTE: gstack finalizes another session's stale
-# .pending-* markers as outcome:unknown (crash detection) inside its telemetry-log
-# script — boots-telemetry-log MUST port that finalize loop when it lands (Phase
-# 3), or crashed sessions leak markers that never become 'unknown' events.
+# Ops run-start marker (Layer B). If this session dies before it logs an end event,
+# the marker is left behind; the next boots-telemetry-log run finalizes any other
+# session's stale marker as outcome:unknown, so a crash is recorded, not lost.
 if [ "$_TEL" != "off" ]; then
   printf '{"skill":"boots-retire","ts":"%s","session_id":"%s"}\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$_SESSION_ID" > ~/.boots/analytics/.pending-"$_SESSION_ID" 2>/dev/null || true
 fi
@@ -109,11 +108,10 @@ vocabulary or the raw output.
 1. **Find the cold and the overridden:**
    ```bash
    ls -lt ~/.boots/systems/*/system.md 2>/dev/null
-   PY=.venv/bin/python; [ -x "$PY" ] || PY=python3
-   $PY -m toolkit records summary 2>/dev/null || true
    ```
    Look for systems untouched for weeks, stuck at the same stage across many
-   sessions, or long past their moment.
+   sessions, or long past their moment. If the user keeps a loose-ends store, read
+   its list too — guarded, so an absent backend just means one less place to look.
 2. **Propose, with the evidence, in plain words:** "You haven't touched that CV
    grader in six weeks and it never got past the planning stage. Want to drop it, or
    is it on hold on purpose?" Name the thing by what it does, not its slug, and say

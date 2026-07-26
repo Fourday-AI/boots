@@ -4,7 +4,7 @@
 # Fire-and-forget, backgrounded from boots-telemetry-log. Rate-limited to once
 # per 5 min. Cursor-based (never re-sends). Strips everything identifying before
 # it leaves the machine, then POSTs to the telemetry-ingest edge function (never
-# the DB directly). Ported from gstack-telemetry-sync.
+# the DB directly).
 #
 # Privacy, enforced here on the client before anything is sent:
 #   - `_repo` (local-only repo name) is stripped from every funnel record.

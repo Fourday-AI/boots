@@ -6,7 +6,7 @@
 #   UPGRADE_AVAILABLE <old> <new>   — remote VERSION is strictly newer
 #   (nothing)                       — up to date, snoozed, disabled, no remote, or offline
 #
-# Ported from gstack-update-check, adapted to Boots' layout: the skill installs at
+# Adapted to Boots' layout: the skill installs at
 # .claude/skills/boots/, so this resolves UP to the repo root (where VERSION + .git
 # live) instead of assuming skill-dir == repo-root. The remote is derived from the
 # repo's own `origin` (Boots has no single canonical repo — every user's clone/fork

@@ -1,14 +1,3 @@
-<!--
-  DRAFT README — mirrors the Paperclip structure for eventual open-sourcing.
-  Fill the [TODO] placeholders before going public:
-    - banner image at docs/assets/banner.png ✓ added
-    - real GitHub org/repo slug (currently: Fourday-AI/boots)
-    - social links (Discord / X / site) — delete the ones you don't want
-    - license choice (MIT assumed below)
-    - a demo video/gif
-  Nothing here is published until you `git remote add` + `git push`.
--->
-
 <p align="center">
   <img src="docs/assets/banner.png" alt="Boots — finish what you start. A build-and-close pipeline for Claude Code." width="720" />
 </p>
@@ -17,8 +6,8 @@
   <a href="#install--one-paste"><strong>Install</strong></a> &middot;
   <a href="#how-you-use-it"><strong>How you use it</strong></a> &middot;
   <a href="#the-pipeline"><strong>The pipeline</strong></a> &middot;
-  <a href="https://github.com/Fourday-AI/boots"><strong>GitHub</strong></a> &middot;
-  <!-- [TODO] add or delete: Discord · Twitter/X · Website -->
+  <a href="#privacy--telemetry"><strong>Privacy</strong></a> &middot;
+  <a href="https://github.com/Fourday-AI/boots"><strong>GitHub</strong></a>
 </p>
 
 <p align="center">
@@ -26,14 +15,6 @@
   <a href="https://github.com/Fourday-AI/boots/stargazers"><img src="https://img.shields.io/github/stars/Fourday-AI/boots?style=flat" alt="Stars" /></a>
   <img src="https://img.shields.io/badge/built%20for-Claude%20Code-000" alt="Claude Code" />
 </p>
-
-<br/>
-
-<!-- [TODO] demo video — Paperclip embeds a GitHub-hosted .mp4 here.
-<div align="center">
-  <video src="https://github.com/user-attachments/assets/REPLACE" width="600" controls></video>
-</div>
--->
 
 <br/>
 
@@ -374,7 +355,9 @@ git clone --depth 1 https://github.com/Fourday-AI/boots.git ~/.boots
 ~/.boots/setup            # global; or `~/.boots/setup --project` for one repo
 ```
 
-`setup` symlinks each `boots*` skill into your Claude Code skills directory and prints a `## Boots` block to paste into `CLAUDE.md` so the agent discovers the suite. Because it's symlinked, **upgrading is just `cd ~/.boots && git pull`** — every install updates at once. Uninstall with `~/.boots/setup --uninstall`.
+`setup` symlinks each `boots*` skill into your Claude Code skills directory and prints a `## Boots` block to paste into `CLAUDE.md` so the agent discovers the suite. Uninstall with `~/.boots/setup --uninstall`.
+
+**Upgrading:** just say `boots-upgrade` — Boots pulls the new version, re-runs setup, and applies any migrations. It also notices new versions on its own and offers. By hand it's `cd ~/.boots && git pull && ./setup` — run `setup` too, not `git pull` alone, since that's what applies migrations. Because the skills are symlinked, one upgrade updates every project at once.
 
 ### Try it in five minutes
 
@@ -392,7 +375,7 @@ git clone --depth 1 https://github.com/Fourday-AI/boots.git ~/.boots
 Anything you build with Claude Code — a skill, an agent, an automation, a slash command, a connector to another tool, a script, or a piece of reference it reads — or a small mix of these. (In Claude Code's own terms: skills, subagents, slash commands, hooks, MCP servers, Agent SDK apps, scripts, and durable context.) Boots picks which one from what the job needs.
 
 **Where does Boots keep track of things?**
-Boots keeps plain notes files as it works — one per system, plus a short summary of each chat. They stay in your project and are kept private by default, so nothing depends on you remembering.
+Boots keeps plain notes files as it works — one per system, plus a short summary of each chat. They live in one fixed place on your own machine — `~/.boots/systems/` — deliberately **not** inside whatever project you happen to be working in. A system is your work, not your repo's, so you can pick it up from any directory, and it never ends up committed to a codebase you push. Nothing depends on you remembering. You don't need to read the files either — ask Boots about a system and it reads the record back to you.
 
 **How is this different from a task manager or a builder toolkit?**
 Toolkits help you start; task managers track titles. Boots follows a tool through its whole life and, crucially, **finishes** it — reviews it, proves it works, ships it — so half-built tools stop piling up looking done.
@@ -414,21 +397,72 @@ No. Run `boots` and it routes you to the stage a system actually needs. The anyt
 - ⚪ Support for other AI tools beyond Claude Code
 - ⚪ Packaged as an installable Claude Code plugin / marketplace entry
 - ⚪ Finds work in more places (more sources it can dig through)
-- ⚪ [TODO] — your future direction here
+
+<br/>
+
+## Privacy &amp; telemetry
+
+**Off by default. Nothing leaves your machine unless you turn it on.**
+
+Everything Boots writes about your work — the systems, the session notes, the map of
+what you're building — is plain files in `~/.boots/` on your own machine. Boots never
+sends any of it anywhere.
+
+Separately, there is an optional, opt-in telemetry channel that helps us see whether
+Boots actually gets people to *finished* — where systems stall, which stage loses
+people. You're asked once, plainly, and you can say no and never hear about it again.
+There are three settings:
+
+| setting | what leaves your machine |
+|---|---|
+| `off` *(default)* | **nothing.** |
+| `anonymous` | the records below, with no device id at all |
+| `community` | the same, plus a random per-install id, so one install's path through the pipeline can be followed end to end |
+
+The records are: a stage transition (`scope → build`), whether it advanced, stalled or
+was abandoned, the system's form and platform (`skill`, `claude-code`), your OS name,
+and which skill ran, for how long, and whether it succeeded.
+
+(Boots keeps a local record of your own pipeline regardless of this setting — that's
+what lets it tell you where things are stuck. The setting governs uploading, and only
+uploading.)
+
+The system's name is **hashed** before it leaves — salted with a random value
+generated on your machine, so the same name on two installs produces two unrelated
+hashes, and no hash can be reversed. The per-install id is random, not derived from
+your machine. Your repo's name is recorded locally so Boots can find your work across
+directories, and is stripped before upload.
+
+What is **never** sent: the content of any system, your notes, prompts, code, file
+paths, repo names, or anything you typed. Only the shape of the funnel.
+
+```bash
+~/.boots/.claude/skills/boots/bin/boots-config get telemetry   # off | anonymous | community
+~/.boots/.claude/skills/boots/bin/boots-config set telemetry off
+```
+
+The backend is in [`supabase/`](supabase/) — schema, edge functions and all — so you
+can read exactly what is accepted and stored rather than taking our word for it. The
+client side is one readable shell script:
+[`boots-telemetry-sync`](.claude/skills/boots/bin/boots-telemetry-sync).
+
+Boots also checks for updates by asking your git remote whether the clone is behind.
+That's a plain `git` call to wherever you cloned from, and it's off with
+`boots-config set update_check false`.
 
 <br/>
 
 ## Contributing
 
-<!-- [TODO] add CONTRIBUTING.md before going public, or delete this section for launch -->
-Contributions welcome once this is public. See the contributing guide for details.
+Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) — the one rule worth
+knowing up front is that the skills are **generated from `.tmpl` templates**, so you
+edit the template and regenerate, never the `SKILL.md`.
 
 <br/>
 
 ## License
 
-<!-- [TODO] confirm license. Paperclip uses MIT; adjust if you want something else, and add a LICENSE file. -->
-MIT &copy; 2026 Four Day AI
+MIT &copy; 2026 Fourday AI
 
 <br/>
 

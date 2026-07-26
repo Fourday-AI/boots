@@ -2,14 +2,14 @@
 # boots-telemetry-log — append an ops run event (Layer B) to ~/.boots/analytics/runs.jsonl,
 # and finalize any crashed session's stale .pending marker as outcome:unknown.
 #
-# Layer B is the gstack-style "did the skill run / did it crash" log — distinct
-# from the funnel (Layer A, boots-event), which tracks systems moving through
-# stages. Both share the v:1 envelope so remote sync (Phase 4) is one path.
+# Layer B is the "did the skill run / did it crash" log — distinct from the funnel
+# (Layer A, boots-event), which tracks systems moving through stages. Both share the
+# v:1 envelope, so boots-telemetry-sync ships them over one path.
 #
-# Crash detection (the plan-eng-review must-port): the preamble drops a
-# .pending-<session> marker at skill start. This script, on the NEXT run,
-# finalizes any OTHER session's leftover marker as an outcome:unknown event —
-# so a session that died mid-run still shows up instead of leaking a stale file.
+# Crash detection: the preamble drops a .pending-<session> marker at skill start.
+# This script, on the NEXT run, finalizes any OTHER session's leftover marker as an
+# outcome:unknown event — so a session that died mid-run still shows up instead of
+# leaking a stale file.
 #
 # Usage:
 #   boots-telemetry-log --skill boots-ship --duration 142 --outcome success \

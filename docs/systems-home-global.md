@@ -1,10 +1,12 @@
 # Boots: systems live in one global home (not per-repo)
 
-Decision on record (Henry, 2026-07-22): **a system's records live in the global Boots
-home — `~/.boots/systems/<slug>/` — not per-repo.** Review happens *through the agent*
-(every skill knows where systems are), so no separate review skill or dashboard is
-needed. This revises the placement in `boots-telemetry-update-design.md` §1, which put
-system records in-repo at `./state/systems/<slug>/`.
+Decision on record (2026-07-22): **a system's records live in the global Boots home —
+`~/.boots/systems/<slug>/` — not per-repo.** Review happens *through the agent* (every
+skill knows where systems are), so no separate review skill or dashboard is needed.
+
+This reverses an earlier design that put system records in-repo at
+`./state/systems/<slug>/`. Records created under the old layout are brought forward by
+`boots-migrate-systems`.
 
 ---
 
@@ -21,11 +23,11 @@ And the built **artifact** is already decoupled from the repo: a shipped skill l
 a skills dir to *function*, wherever that is. So the only undecided thing was **where a
 system's records live.**
 
-The old answer ("in-repo, state-as-code") is a straight lift from gstack. But gstack
-augments a **developer already living in a git repo**; Boots builds **standalone AI
-systems for people who are often not in a repo at all**. For Boots the unit of "project"
-is *the system*, not *the repo*. The inherited placement carries an assumption that does
-not hold for who Boots is for.
+The old answer ("in-repo, state-as-code") was inherited from the developer-tooling
+codebase parts of this engine were ported from. That tool augments a **developer already
+living in a git repo**; Boots builds **standalone AI systems for people who are often not
+in a repo at all**. For Boots the unit of "project" is *the system*, not *the repo*. The
+inherited placement carries an assumption that does not hold for who Boots is for.
 
 **The failure mode it creates:** a user builds a system in `~/Documents`, records land in
 `~/Documents/state/systems/…`, then next session they open Claude Code in `~/Desktop` and
@@ -104,7 +106,7 @@ host gets the right path for free.
   was per-repo. When `boots` opens in a repo with a legacy `./state/systems/` holding
   slugs not yet global, it dry-runs, asks once (AskUserQuestion), migrates on yes, and
   drops `~/.boots/.migration-declined-<repo>` on no. Silent when there's nothing to move.
-- **Author's own repo migrated:** 7 systems (282 files incl. `fee-form-run`) copied into
+- **Verified against a real legacy repo:** 7 systems (282 files) copied into
   `~/.boots/systems/`; `boots-analytics` reads them from any cwd. Originals under `state/`
   left in place — delete once confirmed.
 - **Option C affordance (still deferred):** a developer who *wants* records committed next
@@ -117,11 +119,11 @@ host gets the right path for free.
 
 - **`~/.boots` collision.** The README installs the clone to `~/.boots` *and* the runtime
   writes state there. Systems now live at `~/.boots/systems/` alongside the clone. Coexists
-  fine, but the "reclaim `~/.boots`" housekeeping (archive the boots-01/02 leftovers) is now
+  fine, but the "reclaim `~/.boots`" housekeeping (archive any earlier leftovers) is now
   a real prerequisite for a clean user install.
 - **Funnel `_repo` field.** `boots-event`'s outbound buffer still tags a `_repo` slug from
   `git rev-parse`. With global systems this is less meaningful (local-only, harmless) — decide
   whether to keep, drop, or replace with the system slug context.
-- **`.gitignore`.** The product repo's `/state/` ignore is about *Henry's* dev sessions; a
+- **`.gitignore`.** The product repo's `/state/` ignore is about the maintainer's own dev sessions; a
   user's systems now live outside any repo, so the user-facing guidance is simply "your
   systems live in `~/.boots/systems/` and stay on your machine".

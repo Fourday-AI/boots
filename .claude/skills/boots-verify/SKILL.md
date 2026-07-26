@@ -32,10 +32,9 @@ echo "TELEMETRY: ${_TEL:-off}"
 echo "TEL_PROMPTED: $_TEL_PROMPTED"
 echo "PROACTIVE: $_PROACTIVE"
 echo "BRANCH: $_BRANCH"
-# Ops run-start marker (Layer B). NOTE: gstack finalizes another session's stale
-# .pending-* markers as outcome:unknown (crash detection) inside its telemetry-log
-# script — boots-telemetry-log MUST port that finalize loop when it lands (Phase
-# 3), or crashed sessions leak markers that never become 'unknown' events.
+# Ops run-start marker (Layer B). If this session dies before it logs an end event,
+# the marker is left behind; the next boots-telemetry-log run finalizes any other
+# session's stale marker as outcome:unknown, so a crash is recorded, not lost.
 if [ "$_TEL" != "off" ]; then
   printf '{"skill":"boots-verify","ts":"%s","session_id":"%s"}\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$_SESSION_ID" > ~/.boots/analytics/.pending-"$_SESSION_ID" 2>/dev/null || true
 fi
@@ -140,15 +139,12 @@ Read the palette for this system's platform,
   it writes, the block it applies).
 - **MCP server** → call one of its tools, check the response shape and a real value.
 - **Agent SDK app** → run it end to end on a fixture, check the output.
-- **script / CLI** → run it, exit 0 plus expected output. If it is a loose-end-backed
-  script in a feature-toolkit repo, use the deterministic check and do not judge it
-  yourself:
-  ```bash
-  PY=.venv/bin/python; [ -x "$PY" ] || PY=python3
-  $PY -m toolkit verify <id>
-  ```
-  exit 0 → verified with evidence; exit 1 → failed, stays unverified; exit 2 → no
-  machine-checkable target, needs a human read.
+- **script / CLI** → run it, exit 0 plus expected output. If the system came from a
+  loose-ends store that offers its own verify command for the record, **run that
+  instead of judging the output yourself** — a deterministic check the repo already
+  trusts beats your reading of the result. Treat a non-zero exit as a real failure
+  that leaves the system unverified, and a "nothing machine-checkable here" result as
+  a route to a human read, not as a pass.
 - **document / context** → mostly Tier-2: have a fresh read confirm it changes
   behavior. If it makes a checkable claim, check that claim.
 

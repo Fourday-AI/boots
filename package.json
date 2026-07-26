@@ -9,7 +9,8 @@
     "gen:skill-docs": "bun run scripts/gen-skill-docs.ts",
     "gen:skill-docs:check": "bun run scripts/gen-skill-docs.ts --dry-run",
     "test": "bash scripts/test-e2e.sh",
-    "test:live": "bash scripts/test-e2e.sh --live"
+    "test:live": "bash scripts/test-e2e.sh --live",
+    "test:install": "bash scripts/test-install.sh"
   },
   "devDependencies": {
     "@types/bun": "latest"

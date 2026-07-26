@@ -2,8 +2,8 @@
  * RESOLVERS — maps {{PLACEHOLDER}} names to generator functions.
  *
  * Each resolver is `(ctx) => string`, optionally gated as `{ resolve, appliesTo }`.
- * Lean by design: Boots ships PREAMBLE (the universal block) + BIN_DIR. gstack's
- * domain resolvers (browse/design/review-army/gbrain/…) are intentionally absent —
+ * Lean by design: Boots ships PREAMBLE (the universal block) + BIN_DIR. The ancestor's
+ * domain-specific resolvers are intentionally absent —
  * add resolvers here only when a real skill needs one.
  */
 

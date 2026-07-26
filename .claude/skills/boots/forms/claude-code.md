@@ -20,7 +20,7 @@ is usually one of the forms below, or a small composition of them.
 | **Hook** | a shell command the harness runs on an event | `settings.json` `hooks` (PreToolUse, PostToolUse, Stop, …) | something must happen automatically every time X, without the model choosing to |
 | **MCP server** | a tool/data provider Claude connects to — hosted (connect to a provider like Composio) or custom (you build it) | MCP config (`.mcp.json` / settings), plus its own process only if custom | the system needs a new capability or live data source exposed as callable tools |
 | **Agent SDK app** | a standalone agentic program | a Python/TS project using the Claude Agent SDK | the system runs outside an interactive Claude Code session (a service, a scheduled job, a product surface) |
-| **Script / CLI** | deterministic automation, no or thin LLM | a script, or `toolkit/features/<name>.py` in a feature-toolkit repo | the work is a mechanical transform with a clean pass/fail, LLM optional |
+| **Script / CLI** | deterministic automation, no or thin LLM | a script — or, if the repo has an established recipe for adding one, that shape | the work is a mechanical transform with a clean pass/fail, LLM optional |
 | **Document / context** | durable knowledge the agent reads | `CLAUDE.md`, a reference file, a memory | the "system" is really context that makes every future session better |
 
 Compositions are normal: an MCP server plus a skill that drives it; a subagent
@@ -110,7 +110,7 @@ These rules travel with every connection:
   writes the `.gitignore` entry itself — you write these files, the user does not),
   `${VAR}`-expanded from any config that needs it. Never print the URL into the
   chat, never write it into a committed file, an artifact, a system file, or a
-  note, and never into boots-03 itself.
+  note, and never into the Boots repo itself.
 - **A self-running system reads its secret from a file, not a login shell.**
   `~/.zshrc` is sourced only by interactive login shells, so a cron job, launchd
   agent, scheduled cloud agent, or headless `claude -p` never sees a var set there
@@ -186,8 +186,9 @@ master rule.
   For a hosted connection (Composio), first confirm the connected account is
   `ACTIVE`, so an auth failure is not blamed on the artifact.
 - **Agent SDK app** → run it end-to-end on a fixture, check the output.
-- **Script / CLI** → run it, exit 0 plus expected output. In a feature-toolkit repo
-  this can use the repo's own verify (`python -m toolkit verify <id>`).
+- **Script / CLI** → run it, exit 0 plus expected output. If the repo already has its
+  own verify command for this unit of work, prefer it — a check the repo trusts beats
+  your own reading of the output.
 - **Document / context** → mostly a human judgment: does a fresh session reading it
   behave better. If it makes a checkable claim, check that.
 
@@ -204,8 +205,8 @@ a pass. "I ran it and here is the real output" is the only pass.
   connected account `ACTIVE`, and the one-time prerequisite (the user logged in via
   `composio login`, key in the keyring) documented.
 - **Agent SDK app** → runnable with one documented command.
-- **Script / CLI** → invocable from its entry point (a toolkit feature shows in
-  `python -m toolkit`).
+- **Script / CLI** → invocable from its entry point, and listed wherever that entry
+  point advertises its commands (a `--help`, a subcommand index).
 - **Document** → the final file in its resting place, and something reads it.
 
 ## Exact syntax drifts, so don't hardcode it here

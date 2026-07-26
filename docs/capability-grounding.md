@@ -6,7 +6,7 @@ follow-up, see "Where the gate lives" below.
 
 ## The instance that surfaced it
 
-In the cv-grader dogfooding run (`boots-03` transcript `81fb18a6`), the whole
+In a cv-grader dogfooding run, the whole
 system was reframed to *"judge them on their actual work — the reels and
 Instagram, not the CV,"* and the user confirmed it. Build then shipped a subagent
 (`reel-editor-scout.md`) with tools `Read, Bash, Glob, Grep, WebFetch, WebSearch`,

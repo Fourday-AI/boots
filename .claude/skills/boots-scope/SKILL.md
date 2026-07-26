@@ -31,10 +31,9 @@ echo "TELEMETRY: ${_TEL:-off}"
 echo "TEL_PROMPTED: $_TEL_PROMPTED"
 echo "PROACTIVE: $_PROACTIVE"
 echo "BRANCH: $_BRANCH"
-# Ops run-start marker (Layer B). NOTE: gstack finalizes another session's stale
-# .pending-* markers as outcome:unknown (crash detection) inside its telemetry-log
-# script — boots-telemetry-log MUST port that finalize loop when it lands (Phase
-# 3), or crashed sessions leak markers that never become 'unknown' events.
+# Ops run-start marker (Layer B). If this session dies before it logs an end event,
+# the marker is left behind; the next boots-telemetry-log run finalizes any other
+# session's stale marker as outcome:unknown, so a crash is recorded, not lost.
 if [ "$_TEL" != "off" ]; then
   printf '{"skill":"boots-scope","ts":"%s","session_id":"%s"}\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$_SESSION_ID" > ~/.boots/analytics/.pending-"$_SESSION_ID" 2>/dev/null || true
 fi
@@ -239,9 +238,9 @@ A system at `~/.boots/systems/<slug>/system.md` with `stage: scope` and a
    reason to pick a subagent; isolation and running many at once are. Do not draw the
    choice as watch-it versus set-and-forget.
 
-   **Do not let the repo choose.** If you catch yourself writing "ships as a toolkit
-   feature" only because a `toolkit/` exists, that is the exact bug this step exists
-   to stop. State your recommendation in their words, name the runner-up, and record
+   **Do not let the repo choose.** If you catch yourself picking a form only because
+   the repo you happen to be standing in is already full of that shape, that is the
+   exact bug this step exists to stop. State your recommendation in their words, name the runner-up, and record
    the technical form name in the system file (chat stays plain, the file stays
    precise).
 

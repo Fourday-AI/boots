@@ -1,6 +1,6 @@
 # Boots: the first-run experience
 
-Design doc — Henry, 2026-07-22. Builds on `systems-home-global.md` (the global
+Design doc — 2026-07-22. Builds on `systems-home-global.md` (the global
 `~/.boots/systems/` home + "review through the agent"). Status: **decisions locked,
 architecture to pick.**
 
@@ -31,7 +31,7 @@ believe, and how fast can it make them believe it.*
 
 > **Reversal (2026-07-22, during eng review).** The first two decisions below were
 > originally "finish line = a shipped thing held at the end of run #1" + "force a tiny
-> wedge, always." Henry reversed both: **run #1's job is orientation and being
+> wedge, always." Both were reversed: **run #1's job is orientation and being
 > understood, not a same-session ship.** A user may have a bigger-bet system; distorting
 > it into a tiny wedge to manufacture a fast ship is the worse failure. Rushing loses
 > more than it gains. The originals are struck; the versions below govern.
@@ -155,7 +155,7 @@ with Boots — so the finish line is literally on screen in 5 seconds. Then coac
 own (grafts A's flow after the reveal).
 
 - Effort: **S** (for the reveal piece) · Risk: **Low**
-- Note: Henry chose "force a tiny wedge" over "ship a throwaway demo *as their build*."
+- Note: "force a tiny wedge" was chosen over "ship a throwaway demo *as their build*."
   C does not replace their build with a demo — it uses a finished example purely as
   **orientation**, then builds their real wedge. This piece grafts onto A cleanly.
 - Pros: makes premise 2 concrete; cheapest possible "show don't tell."
@@ -196,7 +196,8 @@ settings.json write, no `hosts/` seam extension. Soft trigger accepted (see deci
   clear next step," not "ships in minutes."** Prove it: run first-run in a clean `$HOME`,
   confirm a stranger reaches *understood + one next step*, that the example reveal
   renders, and that `.activated` flips exactly once. This is the office-hours assignment
-  turned into a verification gate. Re-run `/devex-review` against it once built.
+  turned into a verification gate. Re-run the developer-experience review against it
+  once built.
 - **[Performance] Cap the mine.** The only latency is the transcript scan; bound how many
   transcripts/how far back it reads so the background Agent returns in seconds, and keep
   the join unhurried so it never blocks the foreground.
@@ -215,24 +216,3 @@ settings.json write, no `hosts/` seam extension. Soft trigger accepted (see deci
 Before writing any prose: run `boots` yourself in a throwaway `$HOME` with an empty
 `~/.boots/` and screenshot the actual first-run output today. That blank board is the
 thing a stranger sees. Build against the real artifact, not the imagined one.
-
-## GSTACK REVIEW REPORT
-
-| Review | Trigger | Why | Runs | Status | Findings |
-|--------|---------|-----|------|--------|----------|
-| Eng Review | `/plan-eng-review` | Architecture & tests (required) | 1 | clean | 4 arch findings (2 resolved by reversal, 2 folded); 3 quality/ordering + 1 verification + 1 perf recorded; 0 unresolved |
-| CEO Review | `/plan-ceo-review` | Scope & strategy | 0 | — | — |
-| Design Review | `/plan-design-review` | UI/UX gaps | 0 | — | — |
-| DX Review | `/devex-review` | Developer-experience gaps | 0 | — | queued for after build (the boomerang) |
-| Outside Voice | `/codex review` | Independent 2nd opinion | 0 | skipped | user chose to close review |
-
-**Scope:** design doc, no code yet — Test/Performance passes reframed as "how to prove the
-claim" and "mine latency." **Reversal on record:** finish line changed from *shipped thing
-in run #1* to *orientation + understood + next step* (rushing is the worse failure);
-announce changed from a SessionStart hook to the CLAUDE.md `## Boots` block (no
-settings.json write). Both dissolved P1 architecture findings.
-
-**VERDICT:** ENG CLEARED — architecture is coherent and small; every finding either
-resolved or recorded as a build-time item. Ready to hand to `boots-scope`.
-
-NO UNRESOLVED DECISIONS

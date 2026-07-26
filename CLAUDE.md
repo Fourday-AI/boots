@@ -21,9 +21,6 @@ host- or platform-specific behind those two seams.
 Read `README.md` for the product framing and `.claude/skills/boots/SKILL.md` for the full
 behavioral contract (the router). Both are worth reading before changing skill prose.
 
-**`vendor/paperclip/` is a vendored reference repo — ignore it entirely.** It is not part
-of Boots and nothing there should be edited or reasoned about.
-
 ## Project structure
 
 The map. Two seams do the heavy lifting — `hosts/` (multi-host) and `forms/`
@@ -53,13 +50,13 @@ boots/
 │   │                       #   pieces. Only step that goes backwards or disagrees.
 │   ├── boots-extract/
 │   ├── boots-retire/
-│   ├── boots-observe/      # hand-authored (no .tmpl) — edit SKILL.md directly
+│   ├── boots-observe/
 │   └── boots-upgrade/      # upgrade flow the preamble triggers on UPGRADE_AVAILABLE
 ├── hosts/                  # SEAM: one typed config per AI host — add a host = one file here
 │   ├── claude.ts           #   primary/default host
 │   ├── codex.ts            #   external host (frontmatter denylist + path rewrites)
 │   └── index.ts            #   registry: import + append to ALL_HOST_CONFIGS
-├── scripts/                # the template engine (lean port of gstack's gen-skill-docs)
+├── scripts/                # the template engine (ported from a larger internal tool)
 │   ├── gen-skill-docs.ts   #   read .tmpl → resolve {{TOKENS}} → host transforms → write .md
 │   ├── discover-skills.ts  #   finds every SKILL.md.tmpl under .claude/skills
 │   ├── host-config.ts      #   HostConfig interface the hosts/ files implement
@@ -99,11 +96,17 @@ engine expands `{{PLACEHOLDER}}` tokens in the `.tmpl` into the `.md`.
 - **Commit both** the `.tmpl` and its regenerated `.md` together.
 - Enable the pre-commit freshness gate once per clone: `git config core.hooksPath .githooks`
 
-Skills without a `.tmpl` (e.g. `boots-observe`) are hand-authored `SKILL.md` files — those
-you edit directly. The private/personal skills (`ad-repurposer`, `reply-guard`,
-`oro-reel-scout`, `interview-*`, `pc-feedback-backlog`, `skills-changelog`) are the
-author's own built systems, **not** part of the Boots product — leave them out of
-product-facing changes.
+All 15 product skills currently have a `.tmpl`. Should one ever not, it is hand-authored
+and you edit its `SKILL.md` directly — so check before editing.
+
+Any skill dir under `.claude/skills/` that is **not** on the `.gitignore` allow-list is
+the author's own private work, not part of the Boots product. Leave those out of
+product-facing changes, and never name them in anything published (README, changelog,
+skill prose). The allow-list is the only list; don't keep a second copy here:
+
+```bash
+grep -oE '^!/\.claude/skills/[a-z-]+/' .gitignore | sed 's|^!||;s|/$||'
+```
 
 ## The template engine (`scripts/`)
 
@@ -123,8 +126,8 @@ product-facing changes.
   **This is the seam for supporting more AI tools:** add a host by creating `hosts/<name>.ts`
   and appending it to `hosts/index.ts` — one source `.tmpl` then generates that host's skills.
 
-This engine is a lean port of a larger system ("gstack") — comments reference gstack for
-provenance; add resolvers/host features only when a real skill needs them.
+This engine is a lean port of a larger internal system; it deliberately ships less than
+its ancestor. Add resolvers/host features only when a real skill needs them.
 
 ## The pipeline and how skills relate
 
@@ -187,10 +190,21 @@ Shell scripts the preamble and stages call silently. Global state lives under `~
 - `boots-analytics` — rolls funnel history into a board (`--brief`); counts per stage,
   shipped/stalled/abandoned, days-cold per system.
 - `boots-telemetry-log` — ops run event (Layer B: which skill ran, duration, outcome).
+  Also finalizes a crashed session's stale `.pending-*` marker as `outcome:unknown`,
+  then fires `boots-telemetry-sync` in the background.
+- `boots-telemetry-sync` — the only script that talks to the network. Applies the
+  privacy transform (strip `_repo`, salted-hash the system slug, drop the install id on
+  the `anonymous` tier), then POSTs to the `telemetry-ingest` edge function — never the
+  DB directly. Exits immediately when telemetry is `off` or no backend URL is set.
+- `boots-migrate-systems` — brings legacy per-repo `state/systems/` records into the
+  global `~/.boots/systems/` home. Copies (never moves), skips slugs already present,
+  `--dry-run` available. Lazy and repo-aware: the router offers it per repo, because
+  old state had no single location to migrate from.
 
 `migrations/v<version>.sh` — idempotent, gated by `~/.boots/.last-setup-version`; run by
 `setup` and `boots-upgrade` when upgrading across the version in `VERSION`. See
-`migrations/README.md`. None exist yet (`schema_version` is 1).
+`migrations/README.md`. None exist yet (`schema_version` is 1) — the systems-home move
+is handled by `boots-migrate-systems`, not a numbered migration.
 
 ## Install / upgrade
 

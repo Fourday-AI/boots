@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Boots installer. Connects each Boots skill to Claude Code so that updating Boots
-# later (`git pull` in this folder) updates every project at once — no re-copying.
+# later (`git pull && ./setup` in this folder) updates every project at once — no
+# re-copying.
 #
 #   ./setup            # install for every project (into ~/.claude/skills)
 #   ./setup --project  # install for just this project (into ./.claude/skills)
@@ -21,7 +22,7 @@ for arg in "$@"; do
     -h|--help)
       cat <<'USAGE'
 Boots installer — connects each Boots skill to Claude Code so that updating Boots
-later (git pull in this folder) updates every project at once.
+later (git pull && ./setup in this folder) updates every project at once.
 
   ./setup             install for every project (into ~/.claude/skills)
   ./setup --project   install for just this project (into ./.claude/skills)
@@ -108,7 +109,8 @@ mkdir -p "$HOME/.boots"
 [ "$CURRENT_VERSION" != "unknown" ] && echo "$CURRENT_VERSION" > "$LAST_FILE"
 
 echo "Boots is installed — $linked skill(s) connected in $DEST_DIR."
-echo "To update Boots later, run:  cd \"$REPO_ROOT\" && git pull  (every project updates at once)."
+echo "To update Boots later, just say 'boots-upgrade' — or run:"
+echo "  cd \"$REPO_ROOT\" && git pull && ./setup   (every project updates at once)."
 echo
 echo "Last step: paste this into your project's CLAUDE.md so Claude Code knows Boots is here:"
 echo
@@ -119,10 +121,11 @@ tells you the single next step on whatever you're building — or just say what 
 to build and it walks you from a fuzzy idea to a finished tool.
 Skills: boots, boots-clarify, boots-scope, boots-build, boots-review, boots-verify,
 boots-ship, boots-prospect, boots-track, boots-surface, boots-rethink, boots-extract,
-boots-retire, boots-observe.
-Boots keeps its notes in ~/.boots/systems/ (your machine, private, out of any repo), so
-your systems are there no matter which project you're in. To see one, just ask Boots —
-it reads the record and opens what it built for you.
+boots-retire, boots-observe, boots-upgrade.
+Boots keeps its notes in ~/.boots/systems/ — one fixed place on your machine, never in
+the project you happen to be working in — so your systems are there no matter which
+project you're in. To see one, just ask Boots — it reads the record and opens what it
+built for you.
 First run: if `~/.boots/.activated` does not exist yet, open the session by running
 Boots — the person just installed it and may not know to ask. Boots introduces itself
 and shows what a finished system looks like before anything else.

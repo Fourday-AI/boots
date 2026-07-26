@@ -52,13 +52,21 @@ next:   boots-clarify (still fuzzy) | boots-track or boots-scope (already clear)
   reflects back in step 1 and reasons from in step 4 (`profile-derived`). It never
   emits an opportunity by itself; it's the lens the other sources are read through.
 
-### loose-ends toolkit — an optional graveyard backend
-- **detect:** `PY=.venv/bin/python; [ -x "$PY" ] || PY=python3; $PY -m toolkit records summary 2>/dev/null`
-- **read:** `$PY -m toolkit records summary`, then `$PY -m toolkit records show <id>`
-  for any that look live. All guarded with `2>/dev/null || true` — absent = skip.
-- **shape:** `what` = the record's intent; `source` = `toolkit` + record `id`
-  (carry the id — it lets the closer reuse that backend's verify/status);
-  `why` = why it was logged; `next` = track (it already has a home).
+### loose-ends store — an external graveyard, if the user keeps one
+Some people already have a place where abandoned work goes to sit: a homegrown CLI,
+an issue tracker label, a `graveyard.md`. There is no single one to detect, so this
+adapter is **user-configured, not auto-detected** — nothing runs until the user has
+told Boots what their store is and how to read it (the "learn a backend" flow below).
+
+- **detect:** the store recorded in the user's Boots config. No config entry → no
+  store → skip silently. Never guess at a command that might not exist.
+- **read:** whatever list-then-show pair the store offers, always read-only and
+  guarded with `2>/dev/null || true` so an absent or changed backend can't fail a run.
+- **shape:** `what` = the record's intent; `source` = the store's name + the record's
+  own id; `why` = why it was logged; `next` = track (it already has a home).
+- **notes:** **carry the id.** It is the one thing that makes the round trip work — a
+  store that offers its own verify or status commands lets the closer check the work
+  deterministically and hand the result back, instead of Boots judging it alone.
 
 ### repo-signals — unfinished intent sitting in the current repo
 - **detect:** you're in a git repo (`git rev-parse --show-toplevel 2>/dev/null`).
@@ -106,7 +114,6 @@ above once one is learned.
 | Continue | `~/.continue/` | local session json — learnable |
 | Windsurf | `~/Library/Application Support/Windsurf/` | VS Code fork, similar to Cursor |
 | Zed | `~/Library/Application Support/Zed/` | assistant threads local — learnable |
-| gbrain / gstack | a `.gbrain` / gstack learnings store in the repo | may already expose a CLI — check before scraping |
 | ChatGPT / Claude web | (no local file) | **server-side only** — out of reach without the user's login; report, don't build |
 
 Adding to this table (a new tool to detect) is cheap — one row. Turning a row into

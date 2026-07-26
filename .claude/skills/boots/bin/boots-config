@@ -6,7 +6,7 @@
 #   boots-config set <key> <value>  — write a value (creates the file on first set)
 #   boots-config list               — print all effective values (file over defaults)
 #
-# Lean port of gstack-config: flat YAML, no nesting, no schema validation beyond
+# Deliberately minimal: flat YAML, no nesting, no schema validation beyond
 # the DEFAULTS table below. Everything the preamble reads lives here.
 #
 # Env overrides (for testing):

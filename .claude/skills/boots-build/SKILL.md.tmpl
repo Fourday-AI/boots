@@ -97,9 +97,9 @@ section naming the in-scope slice, a `form:` line, and a `target:`.
    - **MCP server** → the server process and the config that registers it
    - **Agent SDK app** → a Python/TS project using the Claude Agent SDK, with one
      documented run command
-   - **script / CLI** → the script; in a feature-toolkit repo, `toolkit/features/
-     <name>.py` per that repo's recipe is one valid shape of this form, not the
-     default for every system
+   - **script / CLI** → the script. If the repo has an established recipe for adding
+     a unit of work (a `features/` or plugin dir with its own conventions), following
+     it is one valid shape of this form — never the default for every system
    - **document / context** → the file in its resting place (a `CLAUDE.md`
      section, a reference doc, a memory)
 

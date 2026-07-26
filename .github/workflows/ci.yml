@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    name: Freshness gate + tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      # Every SKILL.md is generated from its SKILL.md.tmpl and committed. This
+      # fails if a template changed without regenerating — the same check the
+      # .githooks/pre-commit hook runs locally.
+      - name: Generated skills are in sync with their templates
+        run: bun run gen:skill-docs:check
+
+      # Offline, no network, no side effects outside a temp BOOTS_HOME.
+      - name: End-to-end tests
+        run: bun run test
+
+      # Clones this checkout into a throwaway HOME with no prior Boots install and
+      # walks the README's install steps. Catches the install breaking for a new
+      # user on a machine that — unlike a maintainer's — has never had it working.
+      - name: Install works from cold
+        run: bun run test:install
+
+      - name: Shell scripts parse
+        run: |
+          set -euo pipefail
+          for f in setup .githooks/pre-commit .claude/skills/boots/bin/* supabase/config.sh; do
+            [ -f "$f" ] || continue
+            bash -n "$f"
+          done

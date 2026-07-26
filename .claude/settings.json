@@ -1,13 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(.venv/bin/python -m toolkit:*)",
-      "Bash(python3 -m toolkit:*)",
-      "Bash(python -m toolkit:*)",
-      "Bash(ls state/queue:*)",
-      "Bash(ls state:*)",
-      "Bash(uv venv:*)",
-      "Bash(uv pip install:*)"
+      "Bash(bun run gen:skill-docs)",
+      "Bash(bun run gen:skill-docs:check)",
+      "Bash(bun run test)",
+      "Bash(bun run test:live)"
     ]
   }
 }

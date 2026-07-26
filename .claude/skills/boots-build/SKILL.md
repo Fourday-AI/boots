@@ -31,10 +31,9 @@ echo "TELEMETRY: ${_TEL:-off}"
 echo "TEL_PROMPTED: $_TEL_PROMPTED"
 echo "PROACTIVE: $_PROACTIVE"
 echo "BRANCH: $_BRANCH"
-# Ops run-start marker (Layer B). NOTE: gstack finalizes another session's stale
-# .pending-* markers as outcome:unknown (crash detection) inside its telemetry-log
-# script — boots-telemetry-log MUST port that finalize loop when it lands (Phase
-# 3), or crashed sessions leak markers that never become 'unknown' events.
+# Ops run-start marker (Layer B). If this session dies before it logs an end event,
+# the marker is left behind; the next boots-telemetry-log run finalizes any other
+# session's stale marker as outcome:unknown, so a crash is recorded, not lost.
 if [ "$_TEL" != "off" ]; then
   printf '{"skill":"boots-build","ts":"%s","session_id":"%s"}\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$_SESSION_ID" > ~/.boots/analytics/.pending-"$_SESSION_ID" 2>/dev/null || true
 fi
@@ -162,9 +161,9 @@ section naming the in-scope slice, a `form:` line, and a `target:`.
    - **MCP server** → the server process and the config that registers it
    - **Agent SDK app** → a Python/TS project using the Claude Agent SDK, with one
      documented run command
-   - **script / CLI** → the script; in a feature-toolkit repo, `toolkit/features/
-     <name>.py` per that repo's recipe is one valid shape of this form, not the
-     default for every system
+   - **script / CLI** → the script. If the repo has an established recipe for adding
+     a unit of work (a `features/` or plugin dir with its own conventions), following
+     it is one valid shape of this form — never the default for every system
    - **document / context** → the file in its resting place (a `CLAUDE.md`
      section, a reference doc, a memory)
 

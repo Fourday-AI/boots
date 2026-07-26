@@ -28,11 +28,10 @@ six weeks"), not by its stage.
 1. **Find the cold and the overridden:**
    ```bash
    ls -lt {{SYSTEMS_DIR}}/*/system.md 2>/dev/null
-   PY=.venv/bin/python; [ -x "$PY" ] || PY=python3
-   $PY -m toolkit records summary 2>/dev/null || true
    ```
    Look for systems untouched for weeks, stuck at the same stage across many
-   sessions, or long past their moment.
+   sessions, or long past their moment. If the user keeps a loose-ends store, read
+   its list too — guarded, so an absent backend just means one less place to look.
 2. **Propose, with the evidence, in plain words:** "You haven't touched that CV
    grader in six weeks and it never got past the planning stage. Want to drop it, or
    is it on hold on purpose?" Name the thing by what it does, not its slug, and say

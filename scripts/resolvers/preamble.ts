@@ -1,18 +1,18 @@
 /**
  * Boots preamble — the universal block injected into every skill via {{PREAMBLE}}.
  *
- * This is gstack's delivery model (a preamble in every skill, so update checks +
- * telemetry run no matter which skill you enter through), adapted to Boots:
+ * The delivery model is a preamble in every skill, so update checks and telemetry
+ * run no matter which skill the user enters through:
  *   - update check      → bin/boots-update-check
  *   - session tracking  → ~/.boots/sessions/<ppid>
  *   - config reads      → bin/boots-config (telemetry tier, proactive)
  *   - ops run start      → ~/.boots/runs.jsonl (Layer B; started here, closed in epilogue)
  *   - one-time consent   → AskUserQuestion, gated on a marker
  *
- * Every helper call is guarded (`2>/dev/null || true`), so the preamble is inert
- * and harmless until the bin/ scripts land (Phases 1/3). The funnel (Layer A) is
- * NOT here — stage skills emit transitions via bin/boots-event next to the prose
- * log they already write.
+ * Every helper call is guarded (`2>/dev/null || true`), so a missing or failing
+ * bin/ script leaves the preamble inert rather than breaking the skill. The funnel
+ * (Layer A) is NOT here — stage skills emit transitions via bin/boots-event next to
+ * the prose log they already write.
  *
  * Tiers (1–4) are accepted for forward-compat but v1 emits one lean preamble for
  * all skills; add tier-gated sections later if a skill needs the heavier framework.
@@ -52,10 +52,9 @@ echo "TELEMETRY: \${_TEL:-off}"
 echo "TEL_PROMPTED: $_TEL_PROMPTED"
 echo "PROACTIVE: $_PROACTIVE"
 echo "BRANCH: $_BRANCH"
-# Ops run-start marker (Layer B). NOTE: gstack finalizes another session's stale
-# .pending-* markers as outcome:unknown (crash detection) inside its telemetry-log
-# script — boots-telemetry-log MUST port that finalize loop when it lands (Phase
-# 3), or crashed sessions leak markers that never become 'unknown' events.
+# Ops run-start marker (Layer B). If this session dies before it logs an end event,
+# the marker is left behind; the next boots-telemetry-log run finalizes any other
+# session's stale marker as outcome:unknown, so a crash is recorded, not lost.
 if [ "$_TEL" != "off" ]; then
   printf '{"skill":"${ctx.skillName}","ts":"%s","session_id":"%s"}\\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$_SESSION_ID" > ~/.boots/analytics/.pending-"$_SESSION_ID" 2>/dev/null || true
 fi
