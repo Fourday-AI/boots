@@ -30,7 +30,7 @@ for the same reason: a public write endpoint only needs INSERT, so that's all it
 ## What a record contains
 
 Everything identifying is stripped **on the client**, in
-[`boots-telemetry-sync`](../.claude/skills/boots/bin/boots-telemetry-sync), before
+[`boots-telemetry-sync`](../boots/bin/boots-telemetry-sync), before
 anything is sent — not here. The server never sees the original values:
 
 - the system slug is replaced by a SHA-256 hash, salted with a random per-install

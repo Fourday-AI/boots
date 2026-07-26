@@ -22,28 +22,50 @@ state/systems/*/.connection.local.json
 .codex/
 node_modules/
 
-# ── Skills allow-list (deny-by-default) ─────────────────────────────────────
-# This is an OPEN-SOURCE repo. Everything under .claude/skills/ is ignored, and
-# ONLY the product skills below are un-ignored. A newly created skill dir is
-# invisible to git until you add an explicit `!` line for it here — so a private
-# or experimental skill can never be committed by accident (not even via
-# `git add -A`). When you ship a NEW product skill, add one line below.
-/.claude/skills/*
-!/.claude/skills/boots/
-!/.claude/skills/boots-clarify/
-!/.claude/skills/boots-scope/
-!/.claude/skills/boots-build/
-!/.claude/skills/boots-review/
-!/.claude/skills/boots-verify/
-!/.claude/skills/boots-ship/
-!/.claude/skills/boots-prospect/
-!/.claude/skills/boots-track/
-!/.claude/skills/boots-surface/
-!/.claude/skills/boots-rethink/
-!/.claude/skills/boots-extract/
-!/.claude/skills/boots-retire/
-!/.claude/skills/boots-observe/
-!/.claude/skills/boots-upgrade/
+# ── Top-level allow-list (deny-by-default) ──────────────────────────────────
+# This is an OPEN-SOURCE repo, and the product skills now live as top-level
+# directories (so GitHub's landing page IS the skill list). `/*/` ignores EVERY
+# top-level directory and only the ones below are un-ignored. A newly created
+# directory — a private skill, client work, a half-baked experiment — is
+# invisible to git until you add an explicit `!` line for it here, so nothing
+# private can be committed by accident (not even via `git add -A`).
+#
+# When you ship a NEW product skill, add one line to the skills block below.
+# Top-level FILES (README.md, VERSION, setup, …) are unaffected — `/*/` matches
+# directories only.
+/*/
+
+# The product — one directory per skill. This is deliberately an explicit list,
+# not a `boots*/` glob: a glob would silently auto-commit a `boots-clientwork/`.
+!/boots/
+!/boots-clarify/
+!/boots-scope/
+!/boots-build/
+!/boots-review/
+!/boots-verify/
+!/boots-ship/
+!/boots-prospect/
+!/boots-track/
+!/boots-surface/
+!/boots-rethink/
+!/boots-extract/
+!/boots-retire/
+!/boots-observe/
+!/boots-upgrade/
+
+# Supporting repo directories (engine, hosts, docs, backend, CI).
+!/hosts/
+!/scripts/
+!/migrations/
+!/docs/
+!/supabase/
+!/.github/
+!/.githooks/
+
+# .claude/ holds the tracked settings.json only. Its skills/ subdir is now the
+# author's own private work (the product moved to the top level) — keep it out.
+!/.claude/
+/.claude/skills/
 
 # Local-clone runtime state — created when Boots runs in this dev repo in place.
 # The real per-user copies live under ~/.boots/; these top-level artifacts are

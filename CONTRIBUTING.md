@@ -8,10 +8,10 @@ guide is mostly about the few rules that aren't obvious.
 ## Get set up
 
 ```bash
-git clone https://github.com/Fourday-AI/boots.git ~/.boots
-cd ~/.boots
+git clone https://github.com/Fourday-AI/boots.git ~/.claude/skills/.boots
+cd ~/.claude/skills/.boots
 git config core.hooksPath .githooks      # do this once — see "the freshness gate"
-./setup                                  # symlink the skills into ~/.claude/skills
+./setup                                  # symlink the skills alongside the clone
 ```
 
 You'll want [bun](https://bun.sh) — it runs the generator and the tests. There is no
@@ -29,8 +29,8 @@ bun run test:live             # the above, plus real network checks
 Every skill is **two files**:
 
 ```
-.claude/skills/boots-scope/SKILL.md.tmpl   ← the source. Edit this.
-.claude/skills/boots-scope/SKILL.md        ← generated, committed, DO NOT EDIT.
+boots-scope/SKILL.md.tmpl   ← the source. Edit this.
+boots-scope/SKILL.md        ← generated, committed, DO NOT EDIT.
 ```
 
 The generated file carries an `AUTO-GENERATED — do not edit directly` header. If you
@@ -53,10 +53,12 @@ they just can't regenerate.)
 ## How the repo is laid out
 
 ```
-.claude/skills/     the product — one directory per skill
-  boots/            the router, plus shared assets for the whole suite
-    bin/            shell scripts the skills call silently
-    forms/          platform palettes (see below)
+boots/              the router, plus shared assets for the whole suite
+  bin/              shell scripts the skills call silently
+  forms/            platform palettes (see below)
+boots-clarify/      one top-level directory per skill — the product IS the
+boots-scope/        front page of the repo
+boots-build/  …
 hosts/              per-AI-tool config (see below)
 scripts/            the template engine + the test suite
 supabase/           optional telemetry backend, off by default
@@ -72,7 +74,7 @@ thing. Two seams carry that, and both are load-bearing:
 
 - **`hosts/`** — one typed config per AI host. Adding support for a new tool should be
   *one new file* plus a line in `hosts/index.ts`, never a rewrite of the skills.
-- **`.claude/skills/boots/forms/`** — one palette per platform, defining what you can
+- **`boots/forms/`** — one palette per platform, defining what you can
   build there, how to verify it, and what "shipped" means. Adding a platform should be
   *one new palette file*.
 
@@ -106,9 +108,10 @@ This is most of what contributing to Boots actually is.
 
 ## Committing safely
 
-`.gitignore` is **deny-by-default** for skills. `/.claude/skills/*` is ignored and each
-product skill is un-ignored with its own `!` line. A new skill directory is invisible
-to git until you add that line — not even `git add -A` can stage it.
+`.gitignore` is **deny-by-default** for directories. `/*/` ignores every top-level
+directory and each product skill (plus the handful of repo directories) is un-ignored
+with its own `!` line. A new directory is invisible to git until you add that line —
+not even `git add -A` can stage it.
 
 This is intentional: it means a private experiment or client work can never be
 committed by accident. The cost is that **when you add a new product skill you must add

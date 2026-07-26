@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Boots is an **open-source suite of skills** that helps people *finish* the AI systems they
 start. If the AI tool is the builder, Boots is the finisher. The deliverable is the
-`boots-*` skills under `.claude/skills/`, not any application code — there is no server, no
+`boots-*` skills at the top level of this repo, not any application code — there is no server, no
 runtime, no build output. Users install by symlinking the skills into their tool's skills
 dir (`./setup`) and pasting a `## Boots` block into their instructions file.
 
@@ -18,7 +18,7 @@ form palettes (`forms/`), which keep "what you can build" separate from "how the
 thinks". Do not hardcode Claude-Code-only assumptions into skill judgment; put anything
 host- or platform-specific behind those two seams.
 
-Read `README.md` for the product framing and `.claude/skills/boots/SKILL.md` for the full
+Read `README.md` for the product framing and `boots/SKILL.md` for the full
 behavioral contract (the router). Both are worth reading before changing skill prose.
 
 ## Project structure
@@ -29,39 +29,46 @@ runtime plumbing they call.
 
 ```
 boots/
-├── .claude/skills/         # THE PRODUCT — the boots-* skills users install
-│   ├── boots/              # the router + all shared assets for the suite
-│   │   ├── SKILL.md.tmpl   #   source template (edit this)
-│   │   ├── SKILL.md        #   generated (committed, AUTO-GENERATED header; don't edit)
-│   │   ├── bin/            #   shell plumbing the preamble + stages call silently
-│   │   ├── forms/          #   SEAM: platform palettes (claude-code.md today; one file per platform)
-│   │   └── examples/       #   bundled resources skills read (e.g. finished-system.md)
-│   ├── boots-clarify/      # one dir per stage skill — .tmpl + generated .md each
-│   ├── boots-scope/        #   pipeline: clarify → scope → build → review → verify → ship
-│   ├── boots-build/
-│   ├── boots-review/
-│   ├── boots-verify/
-│   ├── boots-ship/
-│   ├── boots-prospect/     # cross-cutting skills (any time): prospect · track · surface ·
-│   ├── boots-track/        #   rethink · extract · retire · observe
-│   ├── boots-surface/
-│   ├── boots-rethink/      # the cross-SYSTEM step: reads every system + ~/.boots/map.md,
-│   │                       #   names what they add up to, proposes merges/kills/missing
-│   │                       #   pieces. Only step that goes backwards or disagrees.
-│   ├── boots-extract/
-│   ├── boots-retire/
-│   ├── boots-observe/
-│   └── boots-upgrade/      # upgrade flow the preamble triggers on UPGRADE_AVAILABLE
+├── boots/                  # THE PRODUCT starts here — each skill is a TOP-LEVEL dir,
+│   │                       #   so the repo's GitHub front page IS the list of skills.
+│   ├── SKILL.md.tmpl       #   the router + all shared assets for the suite
+│   ├── SKILL.md            #   generated (committed, AUTO-GENERATED header; don't edit)
+│   ├── bin/                #   shell plumbing the preamble + stages call silently
+│   ├── forms/              #   SEAM: platform palettes (claude-code.md today; one file per platform)
+│   └── examples/           #   bundled resources skills read (e.g. finished-system.md)
+├── boots-clarify/          # one dir per stage skill — .tmpl + generated .md each
+├── boots-scope/            #   pipeline: clarify → scope → build → review → verify → ship
+├── boots-build/
+├── boots-review/
+├── boots-verify/
+├── boots-ship/
+├── boots-prospect/         # cross-cutting skills (any time): prospect · track · surface ·
+├── boots-track/            #   rethink · extract · retire · observe
+├── boots-surface/
+├── boots-rethink/          # the cross-SYSTEM step: reads every system + ~/.boots/map.md,
+│                           #   names what they add up to, proposes merges/kills/missing
+│                           #   pieces. Only step that goes backwards or disagrees.
+├── boots-extract/
+├── boots-retire/
+├── boots-observe/
+├── boots-upgrade/          # upgrade flow the preamble triggers on UPGRADE_AVAILABLE
 ├── hosts/                  # SEAM: one typed config per AI host — add a host = one file here
 │   ├── claude.ts           #   primary/default host
 │   ├── codex.ts            #   external host (frontmatter denylist + path rewrites)
 │   └── index.ts            #   registry: import + append to ALL_HOST_CONFIGS
 ├── scripts/                # the template engine (ported from a larger internal tool)
 │   ├── gen-skill-docs.ts   #   read .tmpl → resolve {{TOKENS}} → host transforms → write .md
-│   ├── discover-skills.ts  #   finds every SKILL.md.tmpl under .claude/skills
+│   ├── discover-skills.ts  #   finds every SKILL.md.tmpl in a top-level skill dir
 │   ├── host-config.ts      #   HostConfig interface the hosts/ files implement
 │   ├── test-e2e.sh         #   end-to-end tests: `bun run test` (offline, CI-safe) ·
 │   │                       #   `bun run test:live` (+ GitHub upgrade + real ingest/pulse)
+│   ├── test-install.sh     #   `test:install` — clean-room: cold HOME, clone, setup, uninstall
+│   ├── test-lifecycle.sh   #   `test:lifecycle` — cold HOME + throwaway git upstream:
+│   │                       #     install → funnel → upgrade → uninstall. Guards the
+│   │                       #     repo-root walk in bin/, whose failure mode is SILENCE.
+│   ├── test-session.sh     #   `test:session` — the only paid, manually-run check:
+│   │                       #     real `claude -p` sessions prove Claude Code discovers
+│   │                       #     and routes the skills. Needs a login; --dry-run is free.
 │   └── resolvers/          #   each {{TOKEN}} → a generator function
 │       ├── index.ts        #     RESOLVERS map (PREAMBLE, FUNNEL_*, BIN_DIR, SKILL_DIR, SYSTEMS_DIR)
 │       ├── preamble.ts     #     {{PREAMBLE}} — the universal block injected into every skill
@@ -99,13 +106,13 @@ engine expands `{{PLACEHOLDER}}` tokens in the `.tmpl` into the `.md`.
 All 15 product skills currently have a `.tmpl`. Should one ever not, it is hand-authored
 and you edit its `SKILL.md` directly — so check before editing.
 
-Any skill dir under `.claude/skills/` that is **not** on the `.gitignore` allow-list is
+Any top-level dir that is **not** on the `.gitignore` allow-list is
 the author's own private work, not part of the Boots product. Leave those out of
 product-facing changes, and never name them in anything published (README, changelog,
 skill prose). The allow-list is the only list; don't keep a second copy here:
 
 ```bash
-grep -oE '^!/\.claude/skills/[a-z-]+/' .gitignore | sed 's|^!||;s|/$||'
+grep -oE '^!/boots[a-z-]*/' .gitignore | sed 's|^!/||;s|/$||'
 ```
 
 ## The template engine (`scripts/`)
@@ -168,7 +175,7 @@ cross-cutting, any time: prospect · track · surface · rethink · extract · r
   (bin scripts); see `docs/systems-home-global.md`. The user reviews systems *through the
   agent* (the router's talk rule 10), never by browsing the hidden home. (This dev repo's
   own `state/` still holds the author's legacy systems, gitignored, pending migration.)
-- **Form palettes** live in `.claude/skills/boots/forms/<platform>.md` (`claude-code.md` is
+- **Form palettes** live in `boots/forms/<platform>.md` (`claude-code.md` is
   the only one today; more platforms are drop-in — see `forms/README.md` for the section
   contract). A system's `platform:` field picks its palette; the palette defines the
   buildable forms, how to verify each, and what "shipped" means per form. Keep
@@ -176,7 +183,7 @@ cross-cutting, any time: prospect · track · surface · rethink · extract · r
   This split is the other half of multi-host support: a new platform is one new palette
   file, not a rewrite of the pipeline.
 
-## Runtime plumbing (`.claude/skills/boots/bin/`)
+## Runtime plumbing (`boots/bin/`)
 
 Shell scripts the preamble and stages call silently. Global state lives under `~/.boots/`
 (never in-repo). Telemetry is **off by default** and reads only local files.
@@ -208,26 +215,52 @@ is handled by `boots-migrate-systems`, not a numbered migration.
 
 ## Install / upgrade
 
-- `./setup` (global, symlinks `boots*` skills into `~/.claude/skills`) · `./setup --project`
-  (into `./.claude/skills`) · `./setup --uninstall`. Symlinks mean `git pull` upgrades every
-  install at once. `setup` regenerates skills from templates if bun is present, else installs
-  committed `.md` as-is.
+The documented install clones the repo **into Claude Code's skills dir**, at
+`~/.claude/skills/.boots`, so `git clone && ./setup` is the whole install:
 
-## Committing safely: the skills allow-list
+```bash
+git clone --depth 1 <url> ~/.claude/skills/.boots && ~/.claude/skills/.boots/setup
+```
+
+**The leading dot is load-bearing, not cosmetic.** Claude Code skips dot-directories
+when discovering skills, so the repo is never mistaken for a skill. Without it two
+things break, both verified against gstack (which clones to a visible
+`~/.claude/skills/gstack`): (1) the clone dir would collide with the `boots/` skill's
+own install path, and (2) Claude Code omits the repo-shaped dir from the skill list,
+so the router would need an alias dir — and frontmatter `name:` does **not** override
+a directory name, so the alias surfaces under its directory name (gstack's `/gstack`
+shows up as `_gstack-command`). Boots cannot afford that: `boots` is the word users
+type. Don't "simplify" the dot away.
+
+- `./setup` symlinks each top-level `boots*` dir **whole** (so `bin/`, `forms/` and
+  `examples/` come with it) into the skills dir. When the repo sits inside a dir named
+  `skills`, it installs as siblings there; otherwise it falls back to `~/.claude/skills`,
+  which is what keeps a dev checkout anywhere (e.g. `~/.boots`) working.
+- `./setup --project` installs into `./.claude/skills` · `./setup --uninstall` removes
+  only symlinks it created. Symlinks mean `git pull` upgrades every install at once.
+  `setup` regenerates skills from templates if bun is present, else installs committed
+  `.md` as-is.
+- **`~/.boots/` is the runtime home, not the clone.** Systems, config and analytics live
+  there and survive deleting or re-cloning the repo. Keep the two ideas distinct.
+
+## Committing safely: the top-level allow-list
 
 This is an **open-source repo you also iterate in**, so `.gitignore` is deny-by-default
 where private data could leak:
 
-- **`.claude/skills/` is an explicit allow-list.** `/.claude/skills/*` ignores every
-  skill dir; each product skill is un-ignored with its own `!/.claude/skills/<name>/`
-  line. A newly created skill dir — private experiment, client work, half-baked idea —
-  is **invisible to git until you add its `!` line**, so nothing private is committable
-  by accident (verified: even `git add -A` cannot stage an unlisted skill). The friction
-  is the point: tracking is opt-in, so the only failure mode is "forgot to publish a
-  public skill" (harmless, obvious on the next `git status`), never the reverse. **When
-  you ship a new product skill, add one `!` line for it.** This is deliberately an
-  explicit list, not a `boots*/` glob — a glob would silently auto-commit a
-  `boots-clientwork` dir; the list makes every publish a conscious act.
+- **Every top-level directory is an explicit allow-list.** `/*/` ignores all of them;
+  each product skill and each repo directory is un-ignored with its own `!/<name>/`
+  line. A newly created dir — private experiment, client work, half-baked idea — is
+  **invisible to git until you add its `!` line**, so nothing private is committable by
+  accident (verified: even `git add -A` cannot stage an unlisted dir). The friction is
+  the point: tracking is opt-in, so the only failure mode is "forgot to publish a public
+  skill" (harmless, obvious on the next `git status`), never the reverse. **When you
+  ship a new product skill, add one `!` line for it.** This is deliberately an explicit
+  list, not a `boots*/` glob — a glob would silently auto-commit a `boots-clientwork`
+  dir; the list makes every publish a conscious act. `/*/` matches directories only, so
+  top-level files (`README.md`, `VERSION`, `setup`) are unaffected.
+- **`.claude/skills/` is now the author's own private work**, not the product. It is
+  re-ignored after `!/.claude/` (which exists only to track `settings.json`).
 - **Local-clone runtime state is ignored.** Running Boots in this repo in place creates
   top-level `.activated`, `.consent-prompted`, `.last-setup-version`, `analytics/`,
   `config.yaml`, `installation-id`, `sessions/`, and `systems/` — the same artifacts

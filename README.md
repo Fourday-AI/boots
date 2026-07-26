@@ -346,18 +346,20 @@ Boots is a set of Claude Code skills. There's no build step, no server, no accou
 
 Open Claude Code and paste this. Claude does the rest:
 
-> Install Boots: run `git clone --depth 1 https://github.com/Fourday-AI/boots.git ~/.boots && ~/.boots/setup`, then add the `## Boots` section it prints to my CLAUDE.md.
+> Install Boots: run `git clone --depth 1 https://github.com/Fourday-AI/boots.git ~/.claude/skills/.boots && ~/.claude/skills/.boots/setup`, then add the `## Boots` section it prints to my CLAUDE.md.
 
 Or do it by hand:
 
 ```bash
-git clone --depth 1 https://github.com/Fourday-AI/boots.git ~/.boots
-~/.boots/setup            # global; or `~/.boots/setup --project` for one repo
+git clone --depth 1 https://github.com/Fourday-AI/boots.git ~/.claude/skills/.boots
+~/.claude/skills/.boots/setup     # global; or `… /setup --project` for one repo
 ```
 
-`setup` symlinks each `boots*` skill into your Claude Code skills directory and prints a `## Boots` block to paste into `CLAUDE.md` so the agent discovers the suite. Uninstall with `~/.boots/setup --uninstall`.
+Boots clones straight into your Claude Code skills directory, so the download *is* most of the install. The leading dot in `.boots` is load-bearing: Claude Code skips dot-directories when it looks for skills, so the repo itself is never mistaken for one and the router keeps the plain name `boots` you type. `setup` then symlinks each `boots*` folder alongside it and prints a `## Boots` block to paste into `CLAUDE.md` so the agent discovers the suite. Uninstall with `~/.claude/skills/.boots/setup --uninstall`.
 
-**Upgrading:** just say `boots-upgrade` — Boots pulls the new version, re-runs setup, and applies any migrations. It also notices new versions on its own and offers. By hand it's `cd ~/.boots && git pull && ./setup` — run `setup` too, not `git pull` alone, since that's what applies migrations. Because the skills are symlinked, one upgrade updates every project at once.
+**Upgrading:** just say `boots-upgrade` — Boots pulls the new version, re-runs setup, and applies any migrations. It also notices new versions on its own and offers. By hand it's `cd ~/.claude/skills/.boots && git pull && ./setup` — run `setup` too, not `git pull` alone, since that's what applies migrations. Because the skills are symlinked, one upgrade updates every project at once.
+
+> Your work is kept somewhere else. `~/.boots/` holds your systems, notes and config; the clone above is only the program. Deleting or re-cloning the repo never touches them.
 
 ### Try it in five minutes
 
@@ -437,14 +439,14 @@ What is **never** sent: the content of any system, your notes, prompts, code, fi
 paths, repo names, or anything you typed. Only the shape of the funnel.
 
 ```bash
-~/.boots/.claude/skills/boots/bin/boots-config get telemetry   # off | anonymous | community
-~/.boots/.claude/skills/boots/bin/boots-config set telemetry off
+~/.claude/skills/boots/bin/boots-config get telemetry   # off | anonymous | community
+~/.claude/skills/boots/bin/boots-config set telemetry off
 ```
 
 The backend is in [`supabase/`](supabase/) — schema, edge functions and all — so you
 can read exactly what is accepted and stored rather than taking our word for it. The
 client side is one readable shell script:
-[`boots-telemetry-sync`](.claude/skills/boots/bin/boots-telemetry-sync).
+[`boots-telemetry-sync`](boots/bin/boots-telemetry-sync).
 
 Boots also checks for updates by asking your git remote whether the clone is behind.
 That's a plain `git` call to wherever you cloned from, and it's off with

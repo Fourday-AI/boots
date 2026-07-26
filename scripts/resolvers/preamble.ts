@@ -37,7 +37,7 @@ BOOTS_BIN="$BOOTS_ROOT/boots/bin"
 Run the block below silently. It is invisible plumbing — do NOT narrate it, echo it, or mention telemetry, branch, or sessions to the user (this suite's rule 5: never narrate your plumbing). Surface something ONLY if the update check prints \`UPGRADE_AVAILABLE\` or \`JUST_UPGRADED\` (see "Updates" below). Otherwise go straight to this skill's own opening as if the preamble were not here — it never replaces or precedes the skill's first move in the conversation.
 
 \`\`\`bash
-${envRoot}_UPD=$(${bin}/boots-update-check 2>/dev/null || .claude/skills/boots/bin/boots-update-check 2>/dev/null || true)
+${envRoot}_UPD=$(${bin}/boots-update-check 2>/dev/null || boots/bin/boots-update-check 2>/dev/null || true)
 [ -n "$_UPD" ] && echo "$_UPD" || true
 mkdir -p ~/.boots/sessions ~/.boots/analytics
 touch ~/.boots/sessions/"$PPID" 2>/dev/null || true

@@ -8,10 +8,25 @@
 #   ./setup --uninstall # disconnect the Boots skills this script added
 #
 # It only touches the Boots skills (folders named boots*) and nothing else.
+#
+# WHERE THE SKILLS COME FROM
+# Each skill is a top-level folder in this repo (boots/, boots-build/, …), so the
+# repo's front page IS the list of what you get. Setup symlinks each one whole —
+# not just its SKILL.md — so a skill's bin/, forms/ and examples/ come with it.
+#
+# WHERE THIS REPO LIVES
+# The documented install clones to ~/.claude/skills/.boots, i.e. INSIDE Claude
+# Code's skills folder, so `git clone && ./setup` is the whole install. The
+# leading dot matters: Claude Code skips dot-directories when it looks for
+# skills, so the repo itself is never mistaken for one, and the `boots` skill
+# gets the plain `boots` name it needs. A clone anywhere else (a dev checkout at
+# ~/.boots, say) still works — setup falls back to ~/.claude/skills.
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")" && pwd)"
-SRC_DIR="$REPO_ROOT/.claude/skills"
+SRC_DIR="$REPO_ROOT"
+# The skills dir this repo sits in, when it sits in one (the documented install).
+PARENT_DIR="$(dirname "$REPO_ROOT")"
 
 MODE="global"
 ACTION="install"
@@ -37,11 +52,15 @@ done
 
 if [ "$MODE" = "project" ]; then
   DEST_DIR="$PWD/.claude/skills"
+elif [ "$(basename "$PARENT_DIR")" = "skills" ]; then
+  # Cloned inside a skills dir (the documented install) — install as siblings,
+  # so this works for any host whose skills live somewhere other than ~/.claude.
+  DEST_DIR="$PARENT_DIR"
 else
   DEST_DIR="$HOME/.claude/skills"
 fi
 
-if [ ! -d "$SRC_DIR" ]; then
+if ! ls -d "$SRC_DIR"/boots*/ >/dev/null 2>&1; then
   echo "error: no Boots skills found at $SRC_DIR — run setup from the folder you cloned Boots into" >&2
   exit 1
 fi
@@ -66,6 +85,14 @@ for src in "$SRC_DIR"/boots*/; do
   [ -d "$src" ] || continue
   name="$(basename "$src")"
   dest="$DEST_DIR/$name"
+
+  # Never touch this repo itself. Only reachable if the clone were named after a
+  # product skill (~/.claude/skills/boots) — the dot in .boots is what avoids it,
+  # but a user who clones to a different name shouldn't lose their checkout.
+  if [ "$dest" = "$REPO_ROOT" ]; then
+    echo "skipped  $name — that path is this repo ($REPO_ROOT). Clone to ~/.claude/skills/.boots instead." >&2
+    continue
+  fi
 
   if [ "$ACTION" = "uninstall" ]; then
     # Only remove a link we would have created; never touch a real folder.

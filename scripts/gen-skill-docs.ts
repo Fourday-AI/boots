@@ -23,8 +23,9 @@ import type { HostConfig } from './host-config';
 import { ALL_HOST_NAMES, getHostConfig, resolveHostArg } from '../hosts/index';
 import { discoverTemplates } from './discover-skills';
 
-// Repo layout: engine lives in <repo>/scripts, skills live in <repo>/.claude/skills.
-const ROOT = path.resolve(import.meta.dir, '..', '.claude', 'skills');
+// Repo layout: engine lives in <repo>/scripts, skills are top-level dirs in <repo>
+// (boots/, boots-build/, …) so the repo's front page is the list of what you get.
+const ROOT = path.resolve(import.meta.dir, '..');
 const DRY_RUN = process.argv.includes('--dry-run');
 
 const GENERATED_HEADER =
