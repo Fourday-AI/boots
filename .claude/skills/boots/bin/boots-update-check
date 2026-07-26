@@ -100,6 +100,24 @@ if echo "$_SHA" | grep -qE '^[0-9a-f]{40}$' && echo "$REMOTE_REPO" | grep -q 'gi
       -H "Accept: application/vnd.github.raw" 2>/dev/null || true)"
   fi
 fi
+
+# Host-agnostic fallback: ask git itself for the file. Every path above is
+# GitHub-shaped (raw CDN, gh api), so without this a clone whose origin is
+# GitLab, Codeberg or a self-hosted server would fall through with REMOTE empty
+# and cache UP_TO_DATE — reporting itself current forever, with no error. Since
+# the upstream is each user's own `origin`, that is every fork off GitHub.
+# `git fetch --depth 1` writes only to .git (FETCH_HEAD + objects); it never
+# touches the working tree, the index, or the checked-out branch. Same 5s cap
+# and no-prompt env as the ls-remote above, so an unreachable or auth-walled
+# remote still fails fast to silence rather than hanging a skill. This also
+# covers a private GitHub repo on a machine with no gh CLI, which the raw CDN
+# cannot serve and which otherwise returns the wrong answer silently.
+if [ -z "$REMOTE" ] && echo "$_SHA" | grep -qE '^[0-9a-f]{40}$' && [ -d "$BOOTS_DIR/.git" ]; then
+  if GIT_TERMINAL_PROMPT=0 GIT_HTTP_LOW_SPEED_LIMIT=1000 GIT_HTTP_LOW_SPEED_TIME=5 \
+     git -C "$BOOTS_DIR" fetch --quiet --depth 1 "$REMOTE_REPO" refs/heads/main 2>/dev/null; then
+    REMOTE="$(git -C "$BOOTS_DIR" show FETCH_HEAD:VERSION 2>/dev/null || true)"
+  fi
+fi
 REMOTE="$(printf '%s' "$REMOTE" | tr -d '[:space:]')"
 
 # Validate it looks like a version (rejects HTML error pages)

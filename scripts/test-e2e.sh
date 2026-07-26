@@ -78,6 +78,27 @@ assert_has "just-upgraded → JUST_UPGRADED line" "JUST_UPGRADED 0.0.9.0 0.1.0.0
 D="$WORK/u6"; S="$WORK/u6s"; mkdir -p "$D" "$S"; printf '0.1.0.0\n' >"$D/VERSION"
 assert_eq "no remote → silent" "" "$(uc "$D" "$S")"
 
+# U7 NON-GITHUB origin resolves a real version (offline, over a local bare repo).
+# Regression guard: the fetch used to be gated on the origin containing
+# github.com, so a clone hosted anywhere else fell through with an empty REMOTE
+# and cached UP_TO_DATE forever — reporting itself current with no error, no
+# upgrade, and nothing in the output to hint why. Because the upstream is each
+# user's own `origin`, that silently froze every fork off GitHub. A local bare
+# repo is a non-github remote by definition, so this also runs in CI with no
+# network. Asserts the version came back over plain git, not the raw CDN or gh.
+HOST="$WORK/u7host.git"; D="$WORK/u7"; S="$WORK/u7s"; mkdir -p "$S"
+git init -q --bare "$HOST"
+git init -q "$WORK/u7src" && (
+  cd "$WORK/u7src" && git config user.email t@t && git config user.name t
+  printf '0.9.0.0\n' >VERSION && git add -A && git commit -qm v && git branch -M main
+  git push -q "$HOST" main
+) >/dev/null 2>&1
+git clone -q "$HOST" "$D" >/dev/null 2>&1; printf '0.1.0.0\n' >"$D/VERSION"
+assert_eq "non-github origin → upgrade detected" "UPGRADE_AVAILABLE 0.1.0.0 0.9.0.0" "$(uc "$D" "$S")"
+# The fallback shallow-fetches into .git. That must never disturb the checkout:
+# an update check is a read, and a user mid-edit must not find their tree moved.
+assert_eq "update check leaves the working tree alone" "" "$(git -C "$D" status --porcelain -- . ':!VERSION' 2>/dev/null)"
+
 # ─────────────────────────────────────────────────────────────────────────────
 sect "telemetry — client privacy transform (offline, via local capture server)"
 # Stand up a local server that records POST bodies and returns {inserted:N}, so the

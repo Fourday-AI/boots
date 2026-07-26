@@ -93,7 +93,7 @@ _AUTO=$(~/.claude/skills/boots/bin/boots-config get auto_upgrade 2>/dev/null || 
 echo "AUTO_UPGRADE=$_AUTO"
 ```
 
-**If `AUTO_UPGRADE` is `true`:** skip the question, say "Updating Boots v{old} → v{new}…", go to Step 2. If setup fails, restore from the `.bak` and tell the user the auto-upgrade failed and the previous version is restored.
+**If `AUTO_UPGRADE` is `true`:** skip the question, say "Updating Boots v{old} → v{new}…", go to Step 2. The contributor guard in Step 2 still applies — silent does not mean unconditional, and an auto-upgrade that quietly discarded a contributor's commits would be the worst version of this. If `./setup` fails, say so plainly and tell them the pull already landed, so the fix is to re-run `~/.boots/setup` by hand (there is no snapshot to roll back to: Boots is a git clone, so recovery is git, not a backup copy). Their systems and settings are untouched either way.
 
 **Otherwise** ask once via AskUserQuestion — *"Boots v{new} is available (you're on v{old}). Update now?"* — with four options:
 
@@ -102,10 +102,12 @@ echo "AUTO_UPGRADE=$_AUTO"
 - **Not now** → write the escalating snooze below, then continue whatever the user was doing. Don't mention the update again this session.
 - **Never ask again** → `~/.claude/skills/boots/bin/boots-config set update_check false`, tell them how to re-enable (`boots-config set update_check true`), continue.
 
-Snooze (first = 24h, second = 48h, third+ = 1 week; a new version resets it):
+Snooze (first = 24h, second = 48h, third+ = 1 week; a new version resets it).
+
+**Substitute `<new>` below with the actual version from the `UPGRADE_AVAILABLE <old> <new>` line before you run this** — it is a value you fill in, not a variable the shell expands. Getting this wrong is silent and user-visible: the snooze file records a version that never matches, `check_snooze` never fires, and the user who chose "Not now" gets asked again every session as if they had never answered. Verify the file afterwards (`cat ~/.boots/update-snoozed`) — the first field must be a version number.
 
 ```bash
-_SF="$HOME/.boots/update-snoozed"; _RV="{new}"; _CL=0
+_SF="$HOME/.boots/update-snoozed"; _RV="<new>"; _CL=0
 if [ -f "$_SF" ] && [ "$(awk '{print $1}' "$_SF")" = "$_RV" ]; then _CL=$(awk '{print $2}' "$_SF"); case "$_CL" in *[!0-9]*) _CL=0 ;; esac; fi
 _NL=$(( _CL + 1 )); [ "$_NL" -gt 3 ] && _NL=3
 echo "$_RV $_NL $(date +%s)" > "$_SF"
@@ -121,6 +123,25 @@ BOOTS_REPO=$(cd "$_SELF/../../../.." && pwd -P)
 cd "$BOOTS_REPO" || { echo "Could not find the Boots repo"; exit 1; }
 OLD_VERSION=$(cat VERSION 2>/dev/null || echo unknown)
 if [ ! -d .git ]; then echo "Boots repo has no .git — can't auto-update. Pull it manually."; exit 1; fi
+# Contributor guard. The update below is `reset --hard origin/main`, which would
+# silently discard unpushed commits and would reset a feature branch to main.
+# Neither can happen to someone who only USES Boots (they never commit and never
+# branch), so this is invisible on a normal install — it fires only for someone
+# working ON Boots, which after CONTRIBUTING.md is a real population. Boots' repo
+# is also the user's install dir, so the person developing it is standing in the
+# thing that upgrades itself. Nothing here touches ~/.boots/systems, config.yaml
+# or any other Boots state: those are gitignored, and neither stash nor reset
+# --hard touches ignored files.
+BRANCH=$(git branch --show-current 2>/dev/null)
+AHEAD=$(git rev-list --count '@{u}..HEAD' 2>/dev/null || echo 0)
+echo "GUARD branch=${BRANCH:-detached} ahead=$AHEAD"
+```
+
+**Read the guard before going further.** If `AHEAD` is greater than `0`, or `BRANCH` is anything other than `main`, **stop — do not run the update.** Tell the user in plain words what is in the way and let them choose: *"You've got 3 commits here that aren't pushed anywhere, so I'm not going to overwrite them. Push them first, or tell me to go ahead and I'll set them aside."* Only continue if they explicitly say so. (Their systems and settings are never at risk either way — say so if they look worried.)
+
+When the guard is clear, or the user has chosen to proceed anyway:
+
+```bash
 STASH=$(git stash 2>&1)
 git fetch origin && git reset --hard origin/main
 ./setup >/dev/null 2>&1 || ./setup
