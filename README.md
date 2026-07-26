@@ -310,15 +310,7 @@ It's the one part of Boots allowed to disagree with your plan.
 </td>
 <td>
 
-</td>
-</tr>
-<tr>
-<td>
-
 **`observe`** — The steward for live systems. When Boots opens, it checks each shipped system is still alive, that its latest output actually makes sense (**not just that it ran**), and that you're using it — then proposes concrete fixes and makes them with you. The step that keeps shipped tools from silently breaking.
-
-</td>
-<td>
 
 </td>
 </tr>
