@@ -7,6 +7,85 @@ inferred from the diff, not written by hand. Each entry ends with a
 
 <!-- New entries go directly below this line. -->
 
+## [2026-07-26] Safe to hand to someone else
+**Boots is now something you can give away: it carries a licence and a contributing
+guide, it says plainly what it does and doesn't send anywhere, its advice no longer
+assumes you work the way its author does, and updating it can no longer eat your
+work or quietly stop finding updates at all.**
+
+Two threads. The suite got its private habits removed — several skills used to
+assume the shape of one particular repo and would push you toward building things
+that way regardless of what your job actually needed. And the update path got walked
+end to end for the first time, which turned up four ways it could fail silently.
+Separately, stepping back over all your systems now ends with something to build
+rather than only something to delete.
+
+### Added
+- **Licence, contributing guide, and continuous checks.** MIT, a guide that leads
+  with the one rule worth knowing (the skills are generated from templates, so you
+  edit the template), and a check that runs on every change.
+- **A plain-English account of what leaves your machine.** Everything Boots writes
+  about your work stays in `~/.boots/` and is never sent anywhere. The optional
+  usage reporting is off unless you turn it on, and the README now states exactly
+  what each setting sends, what is hashed, and what is never sent at all. The
+  backend it talks to is in the repo so you can read it rather than trust it.
+- **An install check that runs from cold.** Installs Boots into an empty, throwaway
+  home directory with nothing set up, then confirms it actually answers. Every other
+  test ran on a machine where Boots already worked, which is the one machine where a
+  broken install cannot fail.
+
+### Changed
+- **boots-rethink:** now ends with something to build. Stepping back over your
+  systems used to reliably produce a deletion, because deletions are certain and
+  new work is speculative, so subtraction won every time. It now looks first for the
+  bigger thing all your systems serve and offers to make that a real system of its
+  own, and it leads with the constructive move and at most one removal. If an
+  existing system has already grown into that role it absorbs the job instead of a
+  duplicate being created, and a "parent" that only restates its children gets called
+  out as a label rather than a system.
+- **boots-scope, boots-build, boots-verify, boots-ship, boots-retire:** stopped
+  assuming one repo's habits. These carried hardcoded commands and file layouts from
+  a specific private codebase, which quietly biased what got built toward whatever
+  shape the repo you were standing in was already full of. The judgment stays, the
+  private specifics are gone: if your repo has an established way of adding things,
+  following it is now one option rather than the default.
+- **Install and update instructions.** `setup` now tells you that saying
+  `boots-upgrade` is the way to update, and gives the correct manual command
+  (`git pull && ./setup`, since the pull alone skips migrations).
+
+### Fixed
+- **Updating Boots can no longer discard your work.** The update reset the repo hard
+  to the latest version, which silently threw away commits you hadn't pushed and
+  reset a side branch to the main one. It now checks first and refuses with an
+  explanation instead. This only ever affected people working *on* Boots, not people
+  using it, and your systems and settings were never at risk either way, but Boots is
+  installed into the same folder a contributor edits, so it was worth closing.
+- **Forks stop going stale in silence.** Boots checks for updates against wherever
+  you cloned it from, but the check only understood GitHub. Anywhere else it found
+  nothing, assumed you were current, and said so, forever, with no error. It now asks
+  git directly, which works on any host. Same fix covers a private repo on a machine
+  without the GitHub CLI, which was giving the same confidently wrong answer.
+- **"Not now" now actually postpones.** Declining an update was supposed to hold it
+  for a day, then two, then a week. A placeholder that was never filled in meant the
+  reminder was recorded against a version that never matched, so you were asked again
+  every session as though you'd never answered.
+- **A recovery instruction that pointed at nothing.** If an automatic update failed,
+  the skill said to restore from a backup copy that no step ever made. Replaced with
+  what actually recovers it.
+- **The block you paste after installing listed 14 of the 15 skills**, leaving out
+  the one for updating, while the README told you to use it. Found by the cold
+  install check on its first run.
+
+### Internal
+- Tests for the invariants the cross-system layer depends on: that its notes file
+  stays gitignored (it sits at the repo root on a normal install), that no template
+  placeholder renders literally, and that every skill on disk is either published or
+  deliberately private, so a new skill can't be added and silently never ship.
+- Regression guards for update detection on a non-GitHub host, including that the
+  check leaves your working files alone.
+
+_Tracked up to: 619180742f3932dbcc0d8eded80931d5ed6d6d85_
+
 ## [2026-07-25] Boots can see across all your systems, not one at a time
 **Boots now steps back over everything you've built, tells you what it adds up to,
 and says when two of your systems are really the same job — or when the piece that
