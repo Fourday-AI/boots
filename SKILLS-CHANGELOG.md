@@ -7,6 +7,48 @@ inferred from the diff, not written by hand. Each entry ends with a
 
 <!-- New entries go directly below this line. -->
 
+## [2026-07-26] One line to install, and you can see what you're getting
+**Installing Boots is now a single command that puts it straight where Claude Code
+looks for it, and every skill you get is visible on the front page of the repo
+instead of buried three folders deep.**
+
+Boots looked like a codebase you had to go digging through. Now the repo opens on the
+list of skills themselves, so you can see what Boots actually gives you before you
+install anything. Installing is one clone plus setup, with no separate wire-it-up
+step. Nothing about using Boots changed — say `boots` exactly as before.
+
+### Changed
+- **Install is one line.** `git clone --depth 1 <url> ~/.claude/skills/.boots &&
+  ~/.claude/skills/.boots/setup`. It clones into the folder Claude Code already reads,
+  so downloading Boots is most of installing it.
+- **Your work is kept somewhere else, and that's now explicit.** Systems, notes and
+  settings still live in `~/.boots/` — a different place from the program. Deleting or
+  re-cloning Boots never touches them, and neither does an upgrade.
+- **Upgrading by hand** is now `cd ~/.claude/skills/.boots && git pull && ./setup`.
+  Saying `boots-upgrade` is unchanged and remains the way to do it.
+- **All 15 skills** now live at the top level of the repo. How you invoke them is
+  unchanged.
+
+### Fixed
+- **Update notifications would have gone permanently silent.** Three helper scripts
+  find Boots by counting folders upwards, and the move left them counting one too
+  many — so they could no longer find the version file. Because those scripts are
+  built to stay quiet when something is wrong, "you're up to date" and "I'm broken"
+  would have looked identical, and nobody would ever have been told a new version
+  existed. Caught before it reached anyone.
+
+### Internal
+- Two new checks, because the bug above passed every existing test. `bun run
+  test:lifecycle` runs install → a system moving through the pipeline → an upgrade →
+  uninstall in a throwaway home against a throwaway git remote, offline and free, and
+  pins that an upgrade's `git reset --hard` cannot take a user's systems with it.
+  `bun run test:session` is the one paid, manually-run check: it starts real sessions
+  to prove Claude Code discovers and routes the skills, and that the startup block
+  stays invisible. The repo's deny-by-default rule now covers every top-level folder,
+  not just skills.
+
+_Tracked up to: 6bd15a782617e804707b80c70747eee727556755_
+
 ## [2026-07-26] Safe to hand to someone else
 **Boots is now something you can give away: it carries a licence and a contributing
 guide, it says plainly what it does and doesn't send anywhere, its advice no longer
