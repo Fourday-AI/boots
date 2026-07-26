@@ -20,7 +20,7 @@
 set -uo pipefail
 
 REPO="$(cd "$(dirname "$0")/.." && pwd -P)"
-BIN="$REPO/.claude/skills/boots/bin"
+BIN="$REPO/boots/bin"
 LIVE=0; [ "${1:-}" = "--live" ] && LIVE=1
 
 PASS=0; FAIL=0
@@ -206,26 +206,30 @@ sect "cross-system layer — map + question (offline)"
 
 # X1 the map path resolves per host. Regression guard for adding a host and forgetting
 # the path seam — the map would then be written somewhere the skills never read.
-MAPC="$(grep -c '~/\.boots/map\.md' "$REPO/.claude/skills/boots-rethink/SKILL.md" 2>/dev/null || echo 0)"
+MAPC="$(grep -c '~/\.boots/map\.md' "$REPO/boots-rethink/SKILL.md" 2>/dev/null || echo 0)"
 [ "$MAPC" -ge 2 ] && ok "map path resolved in boots-rethink (claude host)" \
                   || bad "map path resolved in boots-rethink (claude host)" "found $MAPC refs to ~/.boots/map.md"
 
 # X2 no unresolved template tokens anywhere in the generated skills. A typo'd token
 # name renders literally and the instruction silently becomes nonsense.
-UNRES="$(grep -l '{{' "$REPO"/.claude/skills/boots*/SKILL.md 2>/dev/null | head -3)"
+UNRES="$(grep -l '{{' "$REPO"/boots*/SKILL.md 2>/dev/null | head -3)"
 assert_eq "no unresolved {{TOKENS}} in generated skills" "" "$UNRES"
 
-# X3 PRIVACY: map.md must be gitignored. ~/.boots is BOTH the clone and the runtime
-# home on a normal install, so a user's record of what they're building sits at the
-# repo root. If this ever stops being ignored, a `git add -A` publishes it.
+# X3 PRIVACY: map.md must be gitignored. A normal install now clones to
+# ~/.claude/skills/.boots and keeps runtime state in ~/.boots, so the two are no
+# longer the same directory — but a dev clone AT ~/.boots still puts a user's
+# record of what they're building at the repo root. If this ever stops being
+# ignored, a `git add -A` publishes it.
 IGN="$(cd "$REPO" && git check-ignore map.md 2>/dev/null)"
 assert_eq "map.md is gitignored (privacy)" "map.md" "$IGN"
 
 # X4 every skill dir on disk is either a product skill (on the .gitignore allow-list)
 # or deliberately private. Catches a new product skill added without its `!` line —
 # it would be invisible to git and never ship.
-ALLOW="$(cd "$REPO" && grep -oE '^!/\.claude/skills/[a-z0-9-]+/' .gitignore | sed 's|^!/\.claude/skills/||;s|/$||' | sort)"
-TRACKED="$(cd "$REPO" && git ls-tree --name-only HEAD .claude/skills/ | sed 's|.*/||' | sort)"
+ALLOW="$(cd "$REPO" && grep -oE '^!/boots[a-z0-9-]*/' .gitignore | sed 's|^!/||;s|/$||' | sort)"
+# Read the index, not HEAD: a skill added without its `!` line should fail here
+# the moment it's staged, not one commit after it has already been missed.
+TRACKED="$(cd "$REPO" && git ls-files | cut -d/ -f1 | grep -E '^boots' | sort -u)"
 assert_eq "gitignore allow-list matches tracked skills" "$ALLOW" "$TRACKED"
 
 # X5 boots-rethink specifically is on the allow-list and tracked (the newest skill is

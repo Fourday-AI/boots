@@ -46,6 +46,10 @@ trap cleanup EXIT
 # before this line — no ~/.claude, no ~/.boots, no config, no prior version marker.
 HOME_DIR="$CLEAN/home"
 mkdir -p "$HOME_DIR"
+# Where the documented install puts the repo: inside Claude Code's skills dir, dot
+# -prefixed so Claude never mistakes the repo itself for a skill. Distinct from
+# ~/.boots, which stays the runtime home (systems, config) and is NOT the clone.
+CLONE_DIR="$HOME_DIR/.claude/skills/.boots"
 
 printf '%sBoots clean-room install check%s\n' "$B" "$Z"
 printf 'repo url : %s\n' "$REPO_URL"
@@ -61,7 +65,7 @@ esac
 PRODUCT_SKILLS=()
 while IFS= read -r _s; do
   [ -n "$_s" ] && PRODUCT_SKILLS+=("$_s")
-done < <(grep -oE '^!/\.claude/skills/[a-z-]+/' "$REPO/.gitignore" | sed 's|^!/\.claude/skills/||;s|/$||' | sort)
+done < <(grep -oE '^!/boots[a-z-]*/' "$REPO/.gitignore" | sed 's|^!/||;s|/$||' | sort)
 [ "${#PRODUCT_SKILLS[@]}" -gt 0 ] || { printf 'error: could not read the skills allow-list from .gitignore\n' >&2; exit 2; }
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -74,7 +78,7 @@ sect "the documented install command is the one we run"
 # Pull the install line out of the README rather than paraphrasing it, so this check
 # fails when the docs drift from what actually works. A test of a command nobody is
 # handed proves nothing.
-README_CMD="$(grep -oE 'git clone --depth 1 [^ ]+ ~/\.boots && ~/\.boots/setup' "$REPO/README.md" | head -1)"
+README_CMD="$(grep -oE 'git clone --depth 1 [^ ]+ ~/\.claude/skills/\.boots && ~/\.claude/skills/\.boots/setup' "$REPO/README.md" | head -1)"
 if [ -n "$README_CMD" ]; then
   ok "README carries a one-paste install command"
   README_URL="$(printf '%s' "$README_CMD" | awk '{print $5}')"
@@ -83,13 +87,13 @@ if [ -n "$README_CMD" ]; then
     *)     bad "README install command clones over https" "got [$README_URL]" ;;
   esac
 else
-  bad "README carries a one-paste install command" "no 'git clone --depth 1 <url> ~/.boots && ~/.boots/setup' line found in README.md"
+  bad "README carries a one-paste install command" "no 'git clone --depth 1 <url> ~/.claude/skills/.boots && ~/.claude/skills/.boots/setup' line found in README.md"
 fi
 
 # ─────────────────────────────────────────────────────────────────────────────
 sect "step 1 — clone"
 CLONE_LOG="$CLEAN/clone.log"
-if git clone --depth 1 "$REPO_URL" "$HOME_DIR/.boots" >"$CLONE_LOG" 2>&1; then
+if git clone --depth 1 "$REPO_URL" "$CLONE_DIR" >"$CLONE_LOG" 2>&1; then
   ok "clone succeeds"
 else
   bad "clone succeeds" "$(tail -3 "$CLONE_LOG")"
@@ -98,15 +102,15 @@ else
   exit 1
 fi
 
-[ -x "$HOME_DIR/.boots/setup" ] && ok "setup is present and executable" || bad "setup is present and executable"
+[ -x "$CLONE_DIR/setup" ] && ok "setup is present and executable" || bad "setup is present and executable"
 
 # The clone is what a stranger receives. Anything private in it is a leak, and
 # anything missing from it is a broken install for them but not for us.
 for leak in systems state config.yaml installation-id .activated sessions analytics .env; do
-  [ -e "$HOME_DIR/.boots/$leak" ] && bad "clone carries no private '$leak'" "present in the clone a stranger receives" || ok "clone carries no private '$leak'"
+  [ -e "$CLONE_DIR/$leak" ] && bad "clone carries no private '$leak'" "present in the clone a stranger receives" || ok "clone carries no private '$leak'"
 done
 UNLISTED=""
-for d in "$HOME_DIR/.boots/.claude/skills"/*/; do
+for d in "$CLONE_DIR"/boots*/; do
   [ -d "$d" ] || continue
   n="$(basename "$d")"
   printf '%s\n' "${PRODUCT_SKILLS[@]}" | grep -qx "$n" || UNLISTED="$UNLISTED $n"
@@ -117,7 +121,7 @@ done
 sect "step 2 — setup, run as the user runs it"
 SETUP_LOG="$CLEAN/setup.log"
 # env -i would drop PATH and break git/bun; overriding HOME is what isolates this.
-if env HOME="$HOME_DIR" bash "$HOME_DIR/.boots/setup" >"$SETUP_LOG" 2>&1; then
+if env HOME="$HOME_DIR" bash "$CLONE_DIR/setup" >"$SETUP_LOG" 2>&1; then
   ok "setup exits 0 on a cold HOME"
 else
   bad "setup exits 0 on a cold HOME" "$(tail -5 "$SETUP_LOG")"
@@ -220,7 +224,7 @@ assert_has "telemetry sync is a no-op while off" "rc=0" "$CONSENT"
 # ─────────────────────────────────────────────────────────────────────────────
 sect "step 6 — uninstall gives the machine back"
 UNINSTALL_LOG="$CLEAN/uninstall.log"
-if env HOME="$HOME_DIR" bash "$HOME_DIR/.boots/setup" --uninstall >"$UNINSTALL_LOG" 2>&1; then
+if env HOME="$HOME_DIR" bash "$CLONE_DIR/setup" --uninstall >"$UNINSTALL_LOG" 2>&1; then
   ok "uninstall exits 0"
 else
   bad "uninstall exits 0" "$(tail -3 "$UNINSTALL_LOG")"
