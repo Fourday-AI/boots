@@ -7,6 +7,61 @@ inferred from the diff, not written by hand. Each entry ends with a
 
 <!-- New entries go directly below this line. -->
 
+## [2026-07-27] Boots runs somewhere that isn't your laptop
+**Boots now runs in Claude Cowork as an installable plugin — and a session in the
+cloud can find the work you already have on your own computer instead of quietly
+starting you over with an empty one.**
+
+Until now Boots assumed it was running on your machine, where your systems sit at a
+fixed place on disk. A cloud session breaks that assumption: it gets its own
+temporary sandbox, your real files are somewhere else entirely, and a session that
+looked for your work, found nothing, and believed itself would tell you that you had
+no systems — then offer to start you fresh, on top of years of work. That happened
+three times before it was understood. It is now the specific thing the cloud version
+is built not to do: finding nothing is treated as a question to ask, never an answer
+to act on. Nothing changes if you use Boots on your own computer — say `boots`
+exactly as before.
+
+### Added
+- **Boots in Claude Cowork.** A plugin you can install into a Cowork session, with
+  all 14 skills and the same pipeline you already use.
+- **A session in the cloud looks for your real work before assuming there is none.**
+  It checks the folders you've connected, then the names in your home folder, and
+  asks for access to a Boots folder it can see but hasn't been given — and only calls
+  it a first run once all of that comes up empty. It will not create a second, empty
+  home while a real one exists.
+- **What Boots can build is now per-platform.** Each platform brings its own list of
+  buildable things and how each one gets checked, so the skills stop describing forms
+  that only exist somewhere else.
+
+### Changed
+- **The skills no longer assume Claude Code by name.** Where a skill used to say "in
+  its native Claude Code location", it now says the place *this* platform actually
+  runs it. Same guidance, correct wherever you're standing.
+- **The skills table in the README** no longer skips `boots-retire` and
+  `boots-observe`, so the list you see matches the skills you get.
+
+### Fixed
+- **A privacy promise was narrower than it read.** Anything Boots keeps to your
+  machine is marked with a leading underscore, and only one such field was actually
+  being stripped before sending. Everything so marked is now stripped — the rule is
+  the convention, not a list of the fields that existed when it was written.
+
+### Internal
+- Sessions on different machines could mint identical session ids (a container reuses
+  low process numbers), so each recorded the other as having crashed. Ids now carry a
+  random component.
+- Usage records say which platform they came from rather than being inferred from the
+  operating system, one detector shared by both record types so they cannot disagree.
+  A crash is attributed to the host it died on, not the one that noticed it.
+- Queued records are flushed at the start of a session as well as the end — on a host
+  that is wiped between sessions, that is the only chance they get.
+- A run left open overnight is no longer recorded as an eleven-hour run.
+- Adding a platform is one config file plus a palette, documented in
+  `docs/adding-a-platform.md`, with checks that fail loudly rather than silently.
+
+_Tracked up to: 2d5c63e1a6d383d9082072680b6c70a52c33734a_
+
 ## [2026-07-26] One line to install, and you can see what you're getting
 **Installing Boots is now a single command that puts it straight where Claude Code
 looks for it, and every skill you get is visible on the front page of the repo
