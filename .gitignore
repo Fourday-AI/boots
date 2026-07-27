@@ -95,3 +95,8 @@ node_modules/
 # numbers, balances from live sessions). Never commit. The distilled, redacted
 # eval CASES under evals/cases/ are safe and ARE committed.
 /evals/transcripts/
+
+# Build output for plugin-packaged hosts (bun run build:cowork). Already covered
+# by the deny-by-default /*/ rule below — listed explicitly so it stays out even
+# if someone later relaxes that rule.
+/dist/

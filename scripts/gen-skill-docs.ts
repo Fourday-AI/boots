@@ -196,8 +196,22 @@ function processTemplate(tmplPath: string, host: string): { outputPath: string; 
     outputPath = tmplPath.replace(/\.tmpl$/, '');
   } else {
     // External host: route to <hostSubdir>/skills/<name>/SKILL.md + metadata sidecar.
+    //
+    // WHERE <hostSubdir> IS ANCHORED depends on how the host takes delivery.
+    //
+    //   'symlink' hosts (Codex) install from a sibling of the repo's own skills
+    //   dir — the documented layout puts the repo at <skills>/.boots, so two
+    //   levels up is the host's config root. That is a real install path on the
+    //   user's machine, deliberately outside the repo.
+    //
+    //   'plugin' hosts (Cowork) do not install from a path at all: the repo
+    //   BUILDS a bundle that the user installs through the host's own mechanism.
+    //   A build output belongs inside the repo that produced it, so it can be
+    //   inspected, tested, and packaged. Writing it two levels up would scatter
+    //   build artifacts across the user's home directory.
+    const anchor = hostConfig.packaging === 'plugin' ? ROOT : path.resolve(ROOT, '..', '..');
     const externalName = skillDir || name;
-    const outputDir = path.join(path.resolve(ROOT, '..', '..'), hostConfig.hostSubdir, 'skills', externalName);
+    const outputDir = path.join(anchor, hostConfig.hostSubdir, 'skills', externalName);
     fs.mkdirSync(outputDir, { recursive: true });
     outputPath = path.join(outputDir, 'SKILL.md');
     content = applyHostRewrites(content, hostConfig);

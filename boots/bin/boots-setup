@@ -1,0 +1,85 @@
+#!/usr/bin/env bash
+# boots-setup — create (or refresh) a Boots home on the user's own computer.
+#
+# Only for platforms whose home is RESOLVED per session (today: Cowork). It makes
+# the folder skeleton and installs a runnable copy of the bin scripts INTO the
+# home, at <home>/.bin/.
+#
+# Why the scripts get copied rather than run in place: in a cloud session the tool
+# that can reach the user's folders (device_bash) cannot see the sandbox the
+# plugin was unpacked into, and the tool that can see the plugin (Bash) cannot
+# reach the user's folders. The copy inside the home is the only one BOTH can run.
+#
+#   boots-setup --home "<connected folder>/Boots"
+#
+# Safe to re-run: it refreshes the scripts and never touches systems/, map.md or
+# config.yaml. It will NOT create a home at a path that already holds one with
+# systems in it — that is a refresh, not a creation, and it says so.
+set -uo pipefail
+
+HOME_DIR=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --home) HOME_DIR="${2:-}"; shift 2 ;;
+    -h|--help)
+      cat <<'USAGE'
+boots-setup — create or refresh a Boots home.
+
+  boots-setup --home "<connected folder>/Boots"
+
+Creates <home>/{systems,analytics,.bin}, copies the bin scripts and VERSION into
+<home>/.bin, and leaves any existing records untouched.
+USAGE
+      exit 0 ;;
+    *) echo "unknown flag: $1" >&2; exit 2 ;;
+  esac
+done
+
+if [ -z "$HOME_DIR" ]; then
+  echo "error: --home is required. Boots refuses to guess a path — guessing is how a" >&2
+  echo "       second, empty home gets created on top of a real one." >&2
+  exit 2
+fi
+
+SRC_BIN="$(cd "$(dirname "$0")" && pwd -P)"
+SRC_ROOT="$(cd "$SRC_BIN/../.." && pwd -P)"
+
+EXISTING=0
+if [ -d "$HOME_DIR/systems" ]; then
+  EXISTING=$(find "$HOME_DIR/systems" -mindepth 2 -maxdepth 2 -name system.md 2>/dev/null | wc -l | tr -d ' ')
+fi
+
+mkdir -p "$HOME_DIR/systems" "$HOME_DIR/analytics" "$HOME_DIR/.bin" || {
+  echo "error: could not create $HOME_DIR" >&2
+  echo "       If this said \"Permission denied\" on /Users, you passed the path the user" >&2
+  echo "       would type instead of the mount path this shell sees. See reference/boots-home.md." >&2
+  exit 1
+}
+
+# Install the runnable copy. Only the boots-* scripts, never this whole tree.
+for f in "$SRC_BIN"/boots-*; do
+  [ -f "$f" ] || continue
+  cp "$f" "$HOME_DIR/.bin/$(basename "$f")"
+done
+chmod +x "$HOME_DIR/.bin/"* 2>/dev/null || true
+
+# VERSION lets boots-update-check tell the installed copy from the published one.
+for v in "$SRC_ROOT/VERSION" "$SRC_ROOT/../VERSION"; do
+  [ -f "$v" ] && cp "$v" "$HOME_DIR/.bin/VERSION" && break
+done
+
+if [ ! -f "$HOME_DIR/config.yaml" ]; then
+  cat > "$HOME_DIR/config.yaml" <<'YAML'
+# Boots config. Telemetry is off until the user is asked and says yes.
+telemetry: off
+proactive: true
+YAML
+fi
+
+if [ "$EXISTING" -gt 0 ]; then
+  echo "REFRESHED $HOME_DIR ($EXISTING systems left untouched)"
+else
+  echo "CREATED $HOME_DIR"
+fi
+echo "BOOTS_HOME $HOME_DIR"
+echo "BOOTS_BIN $HOME_DIR/.bin"

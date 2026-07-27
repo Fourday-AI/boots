@@ -1,9 +1,9 @@
 ---
 name: boots-prospect
 description: >
-  Boots cross-cutting. The feeder: mine every AI backend the user actually has —
-  Claude Code memory, past transcripts, a loose-ends backend, repo TODOs, other AI
-  tools on the machine — and surface a ranked field of opportunities worth turning
+  Boots cross-cutting. The feeder: mine every backend the user actually has — their
+  standing context and task list, past sessions, the tools and folders they've
+  connected — and surface a ranked field of opportunities worth turning
   into systems. Detects which tools are present, reports the ones it can't read yet,
   and can learn a new one on request. Use when the user says "boots-prospect", "find
   opportunities", "what could I build", "what should I start", or "mine my loose ends".
@@ -19,9 +19,9 @@ has to notice it is worth building. Prospect does that in two moves: it **reads 
 you are** — the role you're in, what you keep doing by hand, the assets and
 connections you already have wired — and then it hands back a **ranked field of
 opportunities** aimed at that person. The field is two kinds of thing woven
-together: **loose threads you've already started** (mined from your Claude Code
-memory, past sessions, a loose-ends backend, TODOs rotting in a repo, other AI tools
-you use) and **builds your profile obviously implies** but that you haven't written
+together: **loose threads you've already started** (mined from your standing
+context, past sessions, a loose-ends backend, TODOs rotting somewhere, the other
+tools you use) and **builds your profile obviously implies** but that you haven't written
 down anywhere yet. Every item carries its evidence — a quote/path for a found
 thread, the named pattern in what you do for a profile-derived one.
 
@@ -51,8 +51,8 @@ promoting and the writing.
 1. **Read who you are — first, before hunting for threads.** Build a short working
    picture of the person: the role they're in, what they keep doing by hand, the
    assets, data, and connections they already have wired, the shape of what they
-   ship. Pull it from the `type: user` profile notes in Claude Code memory (the
-   `user-profile` read in `sources.md`) and from the patterns that repeat across
+   ship. Pull it from the `type: user` profile notes in the host's standing memory
+   (the `user-profile` read in `sources.md`) and from the patterns that repeat across
    projects — a founder of a 161K-user paying product reads very differently from a
    freelance designer, and the field you surface should too. You'll open the emit by
    reflecting this back, so hold it as a few concrete lines, not a vibe.

@@ -36,7 +36,7 @@ stop and send it back. Ship assumes verify succeeded, it does not re-run it.
 
 1. **Produce the usable form.** Verify proved the machinery works; ship makes it
    something someone actually uses. Read the palette for this system's platform,
-   `{{SKILL_DIR}}/forms/<platform>.md` (default `claude-code.md`), section
+   `{{FORMS_DIR}}/<platform>.md` (default `{{DEFAULT_PLATFORM}}.md`), section
    "What shipped means per form". Confirm the form is not just present but live:
    - **skill / subagent / command** → in place and invocable, it triggers and runs
    - **hook** → wired in settings and confirmed firing

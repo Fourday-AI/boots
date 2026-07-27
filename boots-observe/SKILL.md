@@ -30,13 +30,13 @@ _TEL_PROMPTED=$([ -f ~/.boots/.consent-prompted ] && echo "yes" || echo "no")
 _PROACTIVE=$(~/.claude/skills/boots/bin/boots-config get proactive 2>/dev/null || echo "true")
 _BRANCH=$(git branch --show-current 2>/dev/null || echo "unknown")
 # PID + time alone collide across machines — a container reliably hands out low PIDs,
-# so a Cowork session and a local one starting the same second mint the SAME id, and
-# each finalizes the other's pending marker as a crash. The random suffix separates them.
+# so a session in the cloud and one on the laptop starting the same second mint the
+# SAME id, and each finalizes the other's pending marker as a crash. Hence the salt.
 _SESSION_ID="$$-$(date +%s)-${RANDOM:-0}"
 _TEL_START=$(date +%s)
 # Flush anything the previous session left queued (backgrounded, rate-limited,
-# tier-gated, silent without a backend). Sessions on short-lived hosts can end
-# before their last event ships; this is the catch-up.
+# tier-gated, silent without a backend). A session on a short-lived host can end
+# before its last event ships; this is the catch-up.
 [ "$_TEL" != "off" ] && [ -x ~/.claude/skills/boots/bin/boots-telemetry-sync ] && ~/.claude/skills/boots/bin/boots-telemetry-sync >/dev/null 2>&1 &
 echo "TELEMETRY: ${_TEL:-off}"
 echo "TEL_PROMPTED: $_TEL_PROMPTED"
@@ -45,8 +45,11 @@ echo "BRANCH: $_BRANCH"
 # Ops run-start marker (Layer B). If this session dies before it logs an end event,
 # the marker is left behind; the next boots-telemetry-log run finalizes any other
 # session's stale marker as outcome:unknown, so a crash is recorded, not lost.
+# It carries its own platform so the crash is attributed to the host it died on,
+# not to whichever host later notices the corpse.
 if [ "$_TEL" != "off" ]; then
-  printf '{"skill":"boots-observe","ts":"%s","session_id":"%s"}\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$_SESSION_ID" > ~/.boots/analytics/.pending-"$_SESSION_ID" 2>/dev/null || true
+  _PLATFORM=$(~/.claude/skills/boots/bin/boots-platform 2>/dev/null || echo "claude-code")
+  printf '{"skill":"boots-observe","ts":"%s","session_id":"%s","platform":"%s"}\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$_SESSION_ID" "$_PLATFORM" > ~/.boots/analytics/.pending-"$_SESSION_ID" 2>/dev/null || true
 fi
 ```
 

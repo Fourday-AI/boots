@@ -1,9 +1,9 @@
 ---
 name: boots-prospect
 description: >
-  Boots cross-cutting. The feeder: mine every AI backend the user actually has —
-  Claude Code memory, past transcripts, a loose-ends backend, repo TODOs, other AI
-  tools on the machine — and surface a ranked field of opportunities worth turning
+  Boots cross-cutting. The feeder: mine every backend the user actually has — their
+  standing context and task list, past sessions, the tools and folders they've
+  connected — and surface a ranked field of opportunities worth turning
   into systems. Detects which tools are present, reports the ones it can't read yet,
   and can learn a new one on request. Use when the user says "boots-prospect", "find
   opportunities", "what could I build", "what should I start", or "mine my loose ends".
@@ -27,13 +27,13 @@ _TEL_PROMPTED=$([ -f ~/.boots/.consent-prompted ] && echo "yes" || echo "no")
 _PROACTIVE=$(~/.claude/skills/boots/bin/boots-config get proactive 2>/dev/null || echo "true")
 _BRANCH=$(git branch --show-current 2>/dev/null || echo "unknown")
 # PID + time alone collide across machines — a container reliably hands out low PIDs,
-# so a Cowork session and a local one starting the same second mint the SAME id, and
-# each finalizes the other's pending marker as a crash. The random suffix separates them.
+# so a session in the cloud and one on the laptop starting the same second mint the
+# SAME id, and each finalizes the other's pending marker as a crash. Hence the salt.
 _SESSION_ID="$$-$(date +%s)-${RANDOM:-0}"
 _TEL_START=$(date +%s)
 # Flush anything the previous session left queued (backgrounded, rate-limited,
-# tier-gated, silent without a backend). Sessions on short-lived hosts can end
-# before their last event ships; this is the catch-up.
+# tier-gated, silent without a backend). A session on a short-lived host can end
+# before its last event ships; this is the catch-up.
 [ "$_TEL" != "off" ] && [ -x ~/.claude/skills/boots/bin/boots-telemetry-sync ] && ~/.claude/skills/boots/bin/boots-telemetry-sync >/dev/null 2>&1 &
 echo "TELEMETRY: ${_TEL:-off}"
 echo "TEL_PROMPTED: $_TEL_PROMPTED"
@@ -42,8 +42,11 @@ echo "BRANCH: $_BRANCH"
 # Ops run-start marker (Layer B). If this session dies before it logs an end event,
 # the marker is left behind; the next boots-telemetry-log run finalizes any other
 # session's stale marker as outcome:unknown, so a crash is recorded, not lost.
+# It carries its own platform so the crash is attributed to the host it died on,
+# not to whichever host later notices the corpse.
 if [ "$_TEL" != "off" ]; then
-  printf '{"skill":"boots-prospect","ts":"%s","session_id":"%s"}\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$_SESSION_ID" > ~/.boots/analytics/.pending-"$_SESSION_ID" 2>/dev/null || true
+  _PLATFORM=$(~/.claude/skills/boots/bin/boots-platform 2>/dev/null || echo "claude-code")
+  printf '{"skill":"boots-prospect","ts":"%s","session_id":"%s","platform":"%s"}\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$_SESSION_ID" "$_PLATFORM" > ~/.boots/analytics/.pending-"$_SESSION_ID" 2>/dev/null || true
 fi
 ```
 
@@ -90,9 +93,9 @@ has to notice it is worth building. Prospect does that in two moves: it **reads 
 you are** — the role you're in, what you keep doing by hand, the assets and
 connections you already have wired — and then it hands back a **ranked field of
 opportunities** aimed at that person. The field is two kinds of thing woven
-together: **loose threads you've already started** (mined from your Claude Code
-memory, past sessions, a loose-ends backend, TODOs rotting in a repo, other AI tools
-you use) and **builds your profile obviously implies** but that you haven't written
+together: **loose threads you've already started** (mined from your standing
+context, past sessions, a loose-ends backend, TODOs rotting somewhere, the other
+tools you use) and **builds your profile obviously implies** but that you haven't written
 down anywhere yet. Every item carries its evidence — a quote/path for a found
 thread, the named pattern in what you do for a profile-derived one.
 
@@ -122,8 +125,8 @@ promoting and the writing.
 1. **Read who you are — first, before hunting for threads.** Build a short working
    picture of the person: the role they're in, what they keep doing by hand, the
    assets, data, and connections they already have wired, the shape of what they
-   ship. Pull it from the `type: user` profile notes in Claude Code memory (the
-   `user-profile` read in `sources.md`) and from the patterns that repeat across
+   ship. Pull it from the `type: user` profile notes in the host's standing memory
+   (the `user-profile` read in `sources.md`) and from the patterns that repeat across
    projects — a founder of a 161K-user paying product reads very differently from a
    freelance designer, and the field you surface should too. You'll open the emit by
    reflecting this back, so hold it as a few concrete lines, not a vibe.

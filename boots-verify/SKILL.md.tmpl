@@ -42,10 +42,11 @@ actual inputs, not a toy the model invents. Look in the fixtures folder build st
 (`{{SYSTEMS_DIR}}/<slug>/inputs/`). If it has real examples, use them. If it is empty
 or only has the README, **stop and ask for them in plain English — describe how to
 find the folder, don't just name the path** (rule 3 in `boots/SKILL.md`): resolve the
-absolute path (expand `{{SYSTEMS_DIR}}/<slug>/inputs` — it's in the hidden `~/.boots`
-home) and tell them how to reach it — "To prove this works I need 2-3
-real examples. In Finder press ⌘⇧G, paste `{{SYSTEMS_DIR}}/<slug>/inputs`, and
-drop them in there (or ask me to open it — it's a hidden folder); the tool reads that folder when it runs.
+absolute path (expand `{{SYSTEMS_DIR}}/<slug>/inputs` — it's in the Boots home, a
+folder they have no reason to browse) and tell them how to reach it — "To prove this
+works I need 2-3 real examples. In Finder press ⌘⇧G, paste
+`{{SYSTEMS_DIR}}/<slug>/inputs`, and
+drop them in there (or ask me to open it); the tool reads that folder when it runs.
 Tell me when they're in." Do not verify on
 made-up data and do not skip to a pass; a system with no real examples is not
 verified, it is unproven. Only invent a minimal fixture if the user explicitly says
@@ -63,7 +64,7 @@ criterion slips, that is not a fail to hide; it is the next rule to add back in 
 For a deterministic form (script, hook), the mechanical check below is enough.
 
 Read the palette for this system's platform,
-`{{SKILL_DIR}}/forms/<platform>.md` (default `claude-code.md`), section
+`{{FORMS_DIR}}/<platform>.md` (default `{{DEFAULT_PLATFORM}}.md`), section
 "How to verify each form". Then:
 
 - **skill** → invoke it in a real session on the user's real example inputs. Observe

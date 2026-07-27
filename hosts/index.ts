@@ -6,8 +6,9 @@
 import type { HostConfig } from '../scripts/host-config';
 import claude from './claude';
 import codex from './codex';
+import cowork from './cowork';
 
-export const ALL_HOST_CONFIGS: HostConfig[] = [claude, codex];
+export const ALL_HOST_CONFIGS: HostConfig[] = [claude, codex, cowork];
 
 export const HOST_CONFIG_MAP: Record<string, HostConfig> = Object.fromEntries(
   ALL_HOST_CONFIGS.map(c => [c.name, c]),
@@ -30,4 +31,4 @@ export function resolveHostArg(arg: string): string {
   throw new Error(`Unknown host '${arg}'. Valid hosts: ${ALL_HOST_NAMES.join(', ')}`);
 }
 
-export { claude, codex };
+export { claude, codex, cowork };

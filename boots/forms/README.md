@@ -7,19 +7,27 @@ one file per platform in this directory.
 
 ## Files
 
-- `claude-code.md` — the palette Boots targets today. **Default.**
-- (future) `cursor.md`, `cowork.md`, `<platform>.md` — drop-in, same shape.
+- `claude-code.md` — terminal agents with a shell and a disk. Default for Claude
+  Code and Codex.
+- `cowork.md` — Cowork. Adds the forms a terminal has no equivalent for: work that
+  runs on a schedule with nobody watching, managed connections to the user's apps,
+  persisted pages.
+- (future) `cursor.md`, `<platform>.md` — drop-in, same shape.
+
+Note that palettes are keyed by **platform**, not by host: Claude Code and Codex
+are two hosts sharing one palette, because they are the same kind of machine. A
+new palette is warranted only when the runtime can build *different things* — not
+when it merely installs skills somewhere else.
 
 ## How a system picks its palette
 
-Every system file carries a `platform:` field (default `claude-code`), set at
-scope alongside the form. Each stage skill reads the palette for that platform:
+Every system file carries a `platform:` field, set at scope alongside the form.
+Each stage skill reads the palette for that platform, from the `forms/` folder
+next to the `boots` skill's own `SKILL.md`. The skills are generated with that
+path already filled in, so a stage never has to work it out.
 
-```
-~/.claude/skills/boots/forms/<platform>.md
-```
-
-If a system has no `platform:` line, use `claude-code.md`.
+If a system has no `platform:` line, use the running host's default — declared as
+`platform.palette` in `hosts/<host>.ts`, and written into every generated skill.
 
 ## The section contract (what every platform file must have)
 
@@ -35,7 +43,13 @@ palette file must contain these sections, so the stage skills can rely on them:
    platforms; the right side (the form) is what changes.
 4. **How to verify each form** — the real check per form. Never assume `exits 0`.
 5. **What "shipped" means per form** — present and live, not just present.
-6. **A syntax-drift note** — where to get current exact syntax at build time.
+6. **Plain English on this platform** — a translation table for THIS platform's
+   form names: what each is called internally and what to say to the user
+   instead. `boots/SKILL.md` carries only the platform-independent rows (the
+   pipeline's own vocabulary); every form-specific row belongs here, because the
+   forms are what differ. This section is what keeps Cowork words like "scheduled
+   task" and "connector" out of the shared skill bodies.
+7. **A syntax-drift note** — where to get current exact syntax at build time.
 
 Keep platform-specific mechanics (where a form lives, how to build/verify it) in
 the platform file. Keep platform-independent judgment (the ten moves, the closer,

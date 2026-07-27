@@ -1,9 +1,9 @@
 ---
 name: boots-build
 description: >
-  Boots pipeline, stage 3. Make the scoped slice in the form scope chose — a skill,
-  subagent, slash command, hook, MCP server, Agent SDK app, script, or document —
-  in its native Claude Code location. Produces the artifact the closer then reviews,
+  Boots pipeline, stage 3. Make the scoped slice in the form scope chose — whichever
+  of this platform's forms it is — in the place {{RUNTIME}} actually runs it.
+  Produces the artifact the closer then reviews,
   verifies, and ships. Use when a system is scoped and the user says "boots-build",
   "make it", or a system reaches stage: build.
 preamble-tier: 1
@@ -74,11 +74,11 @@ section naming the in-scope slice, a `form:` line, and a `target:`.
    way every time."** For non-judgment forms (a hook, a script, a doc) skip this;
    there is no taste to capture.
 5. **Build it in its native location, and bake in what the guided run taught.** Read
-   the palette for this system's platform, `{{SKILL_DIR}}/forms/<platform>.md`
-   (default `claude-code.md`), for where the chosen form lives and how it is shaped.
-   If you need the current exact syntax (skill frontmatter, hook events, MCP config,
-   Agent SDK packages), check the `/claude-code-guide` skill or the Claude Code docs
-   now — do not trust a frozen snippet.
+   the palette for this system's platform, `{{FORMS_DIR}}/<platform>.md`
+   (default `{{DEFAULT_PLATFORM}}.md`), for where the chosen form lives and how it is
+   shaped. If you need the current exact syntax (skill frontmatter, manifest keys,
+   cron semantics, hook events, MCP config), get it now the way the palette's
+   syntax-drift section says to for this platform — do not trust a frozen snippet.
 
    **First, name the artifact for what it does — do not silently reuse the folder
    slug.** `<name>` below is what the user *types to invoke it* (`/reel-editor-scout`),
@@ -145,9 +145,9 @@ section naming the in-scope slice, a `form:` line, and a `target:`.
    **Fall back to a hosted connection only when the marketplace has nothing.** If the
    scope's integrations list names a hosted connection (Composio), set it up now, by
    the route that fits the form (see "Connect before you build" in the palette):
-   register the MCP endpoint in the Claude Code config for a skill, subagent, command,
-   or hook; create a scoped SDK session and pass its MCP URL into the app for an Agent
-   SDK app or script. Enable only the specific tools scope listed, never the whole
+   register the MCP endpoint where {{RUNTIME}} reads its configuration, for a form the
+   host loads directly; create a scoped SDK session and pass its MCP URL into the app
+   for a form that runs as its own program. Enable only the specific tools scope listed, never the whole
    toolkit. The login and secrets steps that follow are the hosted route's:
 
    **For the hosted route, first get the user logged in — a browser, not a key.** If they are not already

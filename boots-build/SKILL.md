@@ -1,9 +1,9 @@
 ---
 name: boots-build
 description: >
-  Boots pipeline, stage 3. Make the scoped slice in the form scope chose — a skill,
-  subagent, slash command, hook, MCP server, Agent SDK app, script, or document —
-  in its native Claude Code location. Produces the artifact the closer then reviews,
+  Boots pipeline, stage 3. Make the scoped slice in the form scope chose — whichever
+  of this platform's forms it is — in the place Claude Code actually runs it.
+  Produces the artifact the closer then reviews,
   verifies, and ships. Use when a system is scoped and the user says "boots-build",
   "make it", or a system reaches stage: build.
 preamble-tier: 1
@@ -26,13 +26,13 @@ _TEL_PROMPTED=$([ -f ~/.boots/.consent-prompted ] && echo "yes" || echo "no")
 _PROACTIVE=$(~/.claude/skills/boots/bin/boots-config get proactive 2>/dev/null || echo "true")
 _BRANCH=$(git branch --show-current 2>/dev/null || echo "unknown")
 # PID + time alone collide across machines — a container reliably hands out low PIDs,
-# so a Cowork session and a local one starting the same second mint the SAME id, and
-# each finalizes the other's pending marker as a crash. The random suffix separates them.
+# so a session in the cloud and one on the laptop starting the same second mint the
+# SAME id, and each finalizes the other's pending marker as a crash. Hence the salt.
 _SESSION_ID="$$-$(date +%s)-${RANDOM:-0}"
 _TEL_START=$(date +%s)
 # Flush anything the previous session left queued (backgrounded, rate-limited,
-# tier-gated, silent without a backend). Sessions on short-lived hosts can end
-# before their last event ships; this is the catch-up.
+# tier-gated, silent without a backend). A session on a short-lived host can end
+# before its last event ships; this is the catch-up.
 [ "$_TEL" != "off" ] && [ -x ~/.claude/skills/boots/bin/boots-telemetry-sync ] && ~/.claude/skills/boots/bin/boots-telemetry-sync >/dev/null 2>&1 &
 echo "TELEMETRY: ${_TEL:-off}"
 echo "TEL_PROMPTED: $_TEL_PROMPTED"
@@ -41,8 +41,11 @@ echo "BRANCH: $_BRANCH"
 # Ops run-start marker (Layer B). If this session dies before it logs an end event,
 # the marker is left behind; the next boots-telemetry-log run finalizes any other
 # session's stale marker as outcome:unknown, so a crash is recorded, not lost.
+# It carries its own platform so the crash is attributed to the host it died on,
+# not to whichever host later notices the corpse.
 if [ "$_TEL" != "off" ]; then
-  printf '{"skill":"boots-build","ts":"%s","session_id":"%s"}\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$_SESSION_ID" > ~/.boots/analytics/.pending-"$_SESSION_ID" 2>/dev/null || true
+  _PLATFORM=$(~/.claude/skills/boots/bin/boots-platform 2>/dev/null || echo "claude-code")
+  printf '{"skill":"boots-build","ts":"%s","session_id":"%s","platform":"%s"}\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$_SESSION_ID" "$_PLATFORM" > ~/.boots/analytics/.pending-"$_SESSION_ID" 2>/dev/null || true
 fi
 ```
 
@@ -146,10 +149,10 @@ section naming the in-scope slice, a `form:` line, and a `target:`.
    there is no taste to capture.
 5. **Build it in its native location, and bake in what the guided run taught.** Read
    the palette for this system's platform, `~/.claude/skills/boots/forms/<platform>.md`
-   (default `claude-code.md`), for where the chosen form lives and how it is shaped.
-   If you need the current exact syntax (skill frontmatter, hook events, MCP config,
-   Agent SDK packages), check the `/claude-code-guide` skill or the Claude Code docs
-   now — do not trust a frozen snippet.
+   (default `claude-code.md`), for where the chosen form lives and how it is
+   shaped. If you need the current exact syntax (skill frontmatter, manifest keys,
+   cron semantics, hook events, MCP config), get it now the way the palette's
+   syntax-drift section says to for this platform — do not trust a frozen snippet.
 
    **First, name the artifact for what it does — do not silently reuse the folder
    slug.** `<name>` below is what the user *types to invoke it* (`/reel-editor-scout`),
@@ -216,9 +219,9 @@ section naming the in-scope slice, a `form:` line, and a `target:`.
    **Fall back to a hosted connection only when the marketplace has nothing.** If the
    scope's integrations list names a hosted connection (Composio), set it up now, by
    the route that fits the form (see "Connect before you build" in the palette):
-   register the MCP endpoint in the Claude Code config for a skill, subagent, command,
-   or hook; create a scoped SDK session and pass its MCP URL into the app for an Agent
-   SDK app or script. Enable only the specific tools scope listed, never the whole
+   register the MCP endpoint where Claude Code reads its configuration, for a form the
+   host loads directly; create a scoped SDK session and pass its MCP URL into the app
+   for a form that runs as its own program. Enable only the specific tools scope listed, never the whole
    toolkit. The login and secrets steps that follow are the hosted route's:
 
    **For the hosted route, first get the user logged in — a browser, not a key.** If they are not already

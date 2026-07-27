@@ -98,10 +98,10 @@ A system at `{{SYSTEMS_DIR}}/<slug>/system.md` with `stage: scope` and a
    next-bigger option, named in full, so what goes in is a choice they made. Name what
    is left out, item by item.
 3. **Decide the platform and the form. This is the step that was missing.** The
-   platform is the runtime the system runs on, default `claude-code`; set it
+   platform is the runtime the system runs on, default `{{DEFAULT_PLATFORM}}`; set it
    explicitly only if the user is targeting something else. Read the palette for
-   that platform, `{{SKILL_DIR}}/forms/<platform>.md` (default
-   `claude-code.md`). Pick the form from the *nature of the work*, not from what
+   that platform, `{{FORMS_DIR}}/<platform>.md` (default
+   `{{DEFAULT_PLATFORM}}.md`). Pick the form from the *nature of the work*, not from what
    the repo already contains:
    - synthesis / judgment / reading messy input / conversation → skill or subagent
    - deterministic transform with a clean pass/fail → script / CLI
@@ -225,7 +225,7 @@ A system at `{{SYSTEMS_DIR}}/<slug>/system.md` with `stage: scope` and a
 ```markdown
 status: scoped
 stage: build
-platform: <platform, default claude-code>
+platform: <platform, default {{DEFAULT_PLATFORM}}>
 form: <the chosen form>
 next_step: run boots-build to make <the in-scope thing> as a <form>
 target: <the form-appropriate proof of done, from forms/<platform>.md>

@@ -14,6 +14,16 @@ const codex: HostConfig = {
   cliCommand: 'codex',
   cliAliases: ['agents'],
 
+  // Another terminal agent. Same capability axis as Claude Code — shell, disk,
+  // fixed home — so it reads the same palette. This is the normal case: hosts
+  // differ in packaging, not in what they can build.
+  platform: {
+    runtime: 'Codex',
+    palette: 'claude-code',
+    homeModel: 'fixed',
+  },
+
+  packaging: 'symlink',
   globalRoot: '.codex/skills',
   localSkillRoot: '.agents/skills',
   hostSubdir: '.agents',
