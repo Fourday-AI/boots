@@ -73,6 +73,23 @@ section naming the in-scope slice, a `form:` line, and a `target:`.
    see how you actually think — then I'll bake that into the tool so it does it your
    way every time."** For non-judgment forms (a hook, a script, a doc) skip this;
    there is no taste to capture.
+
+   **What the guided run captures is HOW the user thinks — not what the right answer
+   was.** Those are different, and confusing them is the trap here. The corrections
+   ("a career gap isn't a negative") are durable and belong in the artifact. The
+   *verdict* the run reached on that one example is a draft, produced by you and the
+   user under time pressure, and it is exactly the kind of thing verify exists to
+   overturn. **Never record the guided run's conclusion as the answer verify should
+   expect** — that turns a draft into a fixture and teaches verify to grade the tool
+   against your first guess instead of against reality. Record it as "what we thought,
+   and why", and let verify disagree.
+
+   **And check the working tree before you treat any recorded claim as fact.** A
+   guided run reasons from the system files and whatever the user says, and both go
+   stale. If the run leans on something being true — a file exists, a mechanism is
+   built, a decision was made — go and look before you build on it. Observed live: a
+   guided run took a claim from a project's own notes, built a test case on it, and
+   verify found the claim had never been true on disk.
 5. **Build it in its native location, and bake in what the guided run taught.** Read
    the palette for this system's platform, `{{FORMS_DIR}}/<platform>.md`
    (default `{{DEFAULT_PLATFORM}}.md`), for where the chosen form lives and how it is
