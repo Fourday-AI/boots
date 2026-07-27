@@ -4,10 +4,12 @@ description: >
   Boots cross-cutting. Look across ALL of a user's systems at once and work out what
   they add up to — the machine they are accidentally building — then propose the
   redesign: merge two systems that are the same job, kill a duplicate, add the piece
-  that closes a loop, or reshape the lot. The only step allowed to disagree with the
-  plan and go backwards. Use when the user says "boots-rethink", "what am I actually
-  building", "how do these fit together", "am I building the right things", or when
-  the router sees the map has drifted from the systems.
+  that closes a loop, or reshape the lot. Performs the merge itself, creating the new
+  system the parents add up to with its ancestry recorded both ways. The only step
+  allowed to disagree with the plan and go backwards. Use when the user says
+  "boots-rethink", "what am I actually building", "how do these fit together", "am I
+  building the right things", "merge these two", "combine X and Y", "should these be
+  one system", or when the router sees the map has drifted from the systems.
 preamble-tier: 1
 ---
 <!-- AUTO-GENERATED from SKILL.md.tmpl — do not edit directly -->
@@ -134,6 +136,15 @@ Run it when:
 
 Cheap check, safe to run often. If nothing changed, you exit quiet.
 
+**Two ways in.** The full pass above is the default. But when the user names the
+parents themselves — *"merge these two"*, *"should X and Y be one system?"* — go
+straight to step 7 and do that merge. Read those systems and the map's `## proposals`
+list (a merge may already be sitting there accepted), skip steps 1–6, and don't make
+someone sit through a fleet read to get a move they have already decided they want.
+Same skill, narrower entry. Everything in step 7 still applies — above all the
+refusal: named parents are not consent, and "they asked for it" is not evidence the
+child is real.
+
 ## What you do
 
 ### 1. Read everything, purpose first
@@ -214,6 +225,13 @@ against each question in step 2 become its scope. Hand it to `boots-scope` (or
 `boots-clarify` if its foundation no
 longer matches what it has become).
 
+**If instead two or more systems TOGETHER are the push and no single one has grown
+into it, that is a merge — step 7, and you perform it here rather than handing it
+anywhere.** This is the common case and it used to have nowhere to go: the finding was
+real, the move did not exist, and it went onto the map as an accepted proposal that
+nobody ever executed. Two of those sat unexecuted for a day before this step existed.
+An accepted proposal you cannot perform is a finding you have wasted.
+
 **If nothing serves the whole push,** offer `boots-clarify` and hand it the step-2
 paragraph verbatim as the seed. Say it plainly: *"the thing all four of these serve
 isn't written down anywhere as its own thing — want to make it one?"*
@@ -239,11 +257,17 @@ questions. Order matters — the early ones can delete work the later ones would
 tried to improve.
 
 1. **Overlap** — do two systems do the same job? Same question, or same source read
-   for the same purpose. The fix is merge or kill, not a shared file. This is first
-   because there is no sense wiring up a system that shouldn't exist. A shipped
-   system plus a newer half-built rebuild of it is the classic case, and the
-   recommendation is almost always: fold the new intent into the shipped one, retire
-   the rebuild.
+   for the same purpose. The fix is a merge or a kill, not a shared file. This is
+   first because there is no sense wiring up a system that shouldn't exist.
+   **Same question, both doing real work → that is a merge: step 7, and you perform
+   it.** This check is where most merges are found, so do not stop at naming the
+   overlap — the finding is only worth something if it reaches the move. **One is a
+   strict superset of the other and the smaller adds nothing → that is a kill, not a
+   merge** (`boots-retire`); a shipped system plus a newer half-built rebuild of it is
+   the classic case, and the recommendation is almost always to fold the new intent
+   into the shipped one and retire the rebuild. The difference is step 7's own test:
+   if there is no work neither one covers, there is no child, and you are looking at a
+   duplicate rather than a combination.
 2. **Missing piece** — the question has no system for a part it obviously needs.
    Read the question, list what answering it actually requires, and check each part
    against the systems. The gap is the proposal.
@@ -287,7 +311,12 @@ because…`. Take a "that's wrong" seriously — the user knows things the files
 and a declined proposal is information, not a defeat. Record it either way.
 
 **Hand every accepted move to the skill that owns it. Rethink decides; it does not do
-the surgery itself:**
+the surgery itself — with exactly one written exception, the merge (step 7):**
+- systems to **combine** → **you do it, here, in step 7.** The one move rethink
+  performs. Not because doing beats handing off, but because deciding what the child
+  IS *is* the surgery: the same judgment that says "these two are one thing" writes
+  the child's question, and splitting it across two skills is what left the move
+  unbuilt. Every other move still hands off.
 - something to **make** → `boots-clarify` (a new push with no system yet),
   `boots-scope` (an existing system absorbing new work), or `boots-build` (a concrete
   piece whose shape is already obvious — a memory file, a handoff, a grading column)
@@ -300,7 +329,166 @@ back", "this column is never filled" — are a small concrete artifact, not a ne
 system, and routing them through clarify+scope is ceremony that kills them. If you can
 name the file and what goes in it, go straight to build.
 
-### 7. Say nothing when there is nothing
+### 7. Perform the merge — create the system the parents add up to
+
+**This is the one move you perform rather than hand off.** Reached two ways: an
+accepted combine from step 6, or the user naming the parents on the way in.
+
+The output is a NEW system that records where it came from — not one parent
+swallowing another. Absorbing loses the history into whichever parent happened to be
+bigger, and the point of this move is that a user can look at a system and see how it
+got there.
+
+**a. Read the parents properly, and read the working tree, not just the record.**
+Each parent's `question:`, `target:`, `## scope` (both the in and the out lists — an
+`out:` line is often where the child's work is hiding), `## log`, and artifacts. Then
+go and look at what actually exists on disk. A record written a week ago describes a
+system that may have been half-built since, and proposing surgery on stale evidence is
+the most embarrassing thing this skill can do. It has already happened once: a
+proposal to cut a system down was withdrawn mid-session because a parallel session had
+built the thing hours earlier. Check before you cut.
+
+**b. Draft the child from the work NEITHER parent covers — then put it to the user
+to correct.** Not the sum of the parents. The gap between them: what falls between the
+two, what each one's `out:` list pushed away, what the pair makes possible that
+neither could alone. Write the child's `question:` (why it exists) and a first `## scope`
+from that gap, show it, and take the correction. You are drafting, not deciding.
+
+**c. REFUSE when the child would only restate its parents. This is a real branch, not
+a footnote.** The test is concrete: **does the child's scope contain work that no
+parent covers?** If you cannot name that work in a sentence pointing at a file, a
+missing decision, or a gap in a scope's `out:` list, there is no child — say so
+plainly and stop:
+
+> *"I don't think these two should merge. They read the same folder, but they answer
+> different questions, and everything the combined one would do, one of them already
+> does. You'd get a new name and no new work."*
+
+Two systems sharing plumbing is not a merge; **only a shared question is.** "Both read
+Gmail" is the shallowest possible reason to combine two things and the one that will
+tempt you most often.
+
+**Test ONLY the child here. How mature the parents are is step 7g's question, not
+this one.** "They're nearly finished", "this one's about to ship", "reopening that
+would cost a week" — every one of those is an argument about what happens to a
+*parent*, and none of them is evidence about whether the *child* has work of its own.
+Answer them in 7g, where the honest answer is often that both parents **keep running**
+and nothing gets reopened at all. Refusing here on parent maturity is the most likely
+way to get this step wrong, because the objection feels like caution and reads like
+rigour — and it kills a real child to solve a problem 7g was going to solve anyway.
+Observed live: a session refused a genuine merge on exactly this confusion.
+
+And when the user named the parents themselves, the refusal gets
+*harder*, not softer — being asked for a merge is not evidence one exists, and a step
+that always says yes to a named pair is a step nobody can trust to say no. Refusing a
+merge the user asked for is this step working, not failing.
+
+**d. Name the child for the promise it makes, not the mechanism it uses.** The name is
+what the user sees on the board and types, so it is a taste-point: offer your pick and
+one alternative, in one line, and let them choose. Prefer the name that survives the
+implementation changing — a name built from today's mechanism goes stale the day the
+mechanism does.
+
+**e. Show the plan and get a yes BEFORE you write anything. These writes cannot be
+undone.**
+
+This is the only step in Boots that changes several of the user's system records at
+once, and `~/.boots/systems` is not version-controlled — there is no `git checkout` to
+put it back. Never discover that mid-merge. Say it plainly, list every file you are
+about to touch, and wait:
+
+> *"Here's what I'll do: create `<child>`, add a line to `<parent-a>` and `<parent-b>`
+> pointing at it, and update the map. That's four files. Your system records aren't
+> version-controlled, so I can't undo it afterwards — want me to copy them somewhere
+> safe first?"*
+
+Offer the copy; don't take it silently and don't skip the offer because the merge
+looks obvious. A user who says "no, go ahead" has made a decision; a user who was
+never asked has had one made for them.
+
+**Write in this order, always: child first, then the parents, then the map.** If
+something interrupts you partway, a child nobody points at yet is inert and easy to
+finish or delete, while parents pointing at a child that does not exist is a broken
+fleet the router will trip over. Order the damage.
+
+**f. Create the child as a COMPLETE system record — a whole one, not a stub.**
+
+```bash
+mkdir -p "$HOME/.boots"/systems/<child-slug>
+```
+
+Write it in **exactly the shape `boots-clarify` writes** — read that skill's "Write to
+the system file" block and follow it, rather than working from a list here. Every field
+and every section it names, including the `## now` pickup block: the router reads
+`## now` to tell the user their next step, so a child without one is a system the board
+cannot see. Do not hand-roll a shorter version of that skeleton, and do not let this
+step keep its own copy of the field list — one of the two will drift, and the drifting
+one will be this step, because merges are rarer than clarifies.
+
+Three things differ from a clarified system, and only three:
+
+```
+born_from: <parent-slug>, <parent-slug>
+```
+
+`status: clarified`, `stage: scope` — it arrives with a real foundation, and a better
+one than most systems start with, because the parents' evidence IS its foundation. But
+its scope was drafted from their gaps and has not been cut by anyone. Do NOT create it
+further along because its parents were nearly finished: the child is new work and
+inherits none of their progress.
+
+And its `## foundation` is written from the merge — what the parents were each for,
+what fell between them, and what the pair makes possible. That paragraph is the thing
+a reader will use in six months to understand why this system exists.
+
+**Then write ancestry back onto EACH parent:**
+
+```
+evolved_into: <child-slug>
+```
+
+and add a line to that parent's `## log` saying what happened and why — *"merged into
+`<child>`: the install path is one question, not two"*. `evolved_into:` records where
+it went; the log records why, and the why is what someone actually needs later. A field
+without its reason is how a merge becomes folklore.
+
+Both directions, deliberately. Two writes and two chances to drift, but a parent that
+does not point forward is how the same merge gets proposed a second time as if it were
+new — and re-proposing a merge that already happened is exactly the failure this whole
+move exists to end. Do both writes in the same pass, never one and then the other
+later.
+
+**g. Settle each parent's fate WITH the user — one at a time, and it is a call, not a
+rule.** Three outcomes, and which one applies is specific to that parent:
+- **Keeps running** — it has a job of its own that survives the merge. A system that
+  serves the child while still doing its own daily work stays alive.
+- **Becomes a limb** — it keeps existing but stops owning its question; the child owns
+  it now.
+- **Retires** — the child answers its question outright and nothing is left.
+
+Do not batch these into one question. The interesting merges are the ones where the
+parents get different answers, and asking "shall I retire both?" hides that. A parent
+carrying an unresolved hazard that has nothing to do with the merge — a known bug, a
+dangerous edge case — **keeps running**; folding it into a bigger system is how a live
+hazard becomes invisible.
+
+**You decide the fate here; you do not perform the retirement.** Hand any parent
+marked retire to `boots-retire`, which owns that and emits its own event. The
+exception in step 6 is narrow on purpose: you create the child and write the ancestry,
+because that is inseparable from the judgment. Everything else still hands off.
+
+**h. Update the map.** The child's question goes into `## questions in play`; the
+parents' new state is recorded against it. If an accepted proposal produced this
+merge, mark it done with the date and the child's slug — an accepted proposal that
+stays open forever is indistinguishable from one nobody acted on.
+
+**i. Record the child entering the pipeline** (silent, this suite's rule 5):
+
+```bash
+~/.claude/skills/boots/bin/boots-event --system "<child-slug>" --event created --to scope 2>/dev/null || true
+```
+
+### 8. Say nothing when there is nothing
 
 **"Nothing new — this still looks like one push at X, and every part of it has an
 owner"** is a complete and good answer. Do not manufacture a finding to justify the
@@ -380,6 +568,24 @@ own on top:
   exploring" wastes everyone's time and gets ignored. Then stop — state it, put the
   decision, and take the answer.
 
+## Keep getting better at this
+
+When a run teaches you something, write it back into this file so the skill does it
+next time rather than the person running it. Two kinds, and they go to different
+places:
+
+- **A judgment correction** — the user overruled a call you made ("those two aren't
+  the same job", "that child is just a label", "don't retire that one, it still has
+  its own work") → sharpen the rule in the step that made the call, in the user's own
+  words, with the real case as the example. The merges you get wrong are the spec for
+  step 7.
+- **A how-you-operate correction** — the user corrected your method, not your verdict
+  ("you proposed surgery without looking at the working tree", "don't batch the parent
+  decisions into one question") → add it as an instruction in the relevant step.
+
+Both go in this file. A lesson that lives only in a session log is a lesson the next
+run does not have.
+
 ## Hand off
 
 Close by naming what you now think they are building, in one sentence, then the one
@@ -387,8 +593,11 @@ move. If a proposal was accepted, invoke the skill that owns it. If nothing was 
 say so and point at whatever the router had queued next — do not leave the user in a
 step that had no output.
 
-**No funnel event of its own.** Rethink does not move a system through a stage, so it
-records nothing in the funnel — the skill it hands off to (`boots-retire`,
-`boots-track`, `boots-scope`) emits the transition it actually causes. The map's
-`## proposals` list is this step's memory; the funnel stays a clean picture of systems
-moving through the pipeline.
+**No funnel event of its own, except the merge.** Rethink does not move a system
+through a stage, so it records nothing in the funnel — the skill it hands off to
+(`boots-retire`, `boots-track`, `boots-scope`) emits the transition it actually
+causes. The one exception matches the one exception in step 6: a merge *creates* a
+system, so step 7 emits that system's `created` event, because no other skill will.
+Retiring a parent still belongs to `boots-retire` and its event is emitted there. The
+map's `## proposals` list is this step's memory; the funnel stays a clean picture of
+systems moving through the pipeline.

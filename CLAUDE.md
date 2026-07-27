@@ -156,7 +156,15 @@ cross-cutting, any time: prospect · track · surface · rethink · extract · r
   decision), and (c) may disagree with the user's plan. If you add a skill, keep this
   property intact: don't teach a forward stage to restructure the set behind the user's
   back, and don't make rethink do the surgery itself — it decides, then hands to
-  `boots-retire` / `boots-track` / `boots-scope`.
+  `boots-retire` / `boots-track` / `boots-scope`. **One written exception: the merge.**
+  Rethink performs that one itself (step 7) — it creates the child system the parents add
+  up to, with `born_from:` on the child and `evolved_into:` on each parent. The exception
+  exists because deciding what the child IS *is* the surgery: the same judgment that says
+  "these two are one thing" writes the child's question, and splitting that across two
+  skills is what left the move unbuilt long enough for two accepted merge proposals to sit
+  unexecuted on the map. Keep it narrow — rethink creates the child and writes the
+  ancestry; retiring a parent is still `boots-retire`'s. Do not let a second exception in
+  without the same standard of argument.
 - **Three fields carry the cross-system view, and they are easy to conflate:**
   `target:` = what *done* looks like (proof this system works). `question:` = *why it
   exists* — what the user needs to find out, or the decision its output feeds. Only
