@@ -7,6 +7,54 @@ inferred from the diff, not written by hand. Each entry ends with a
 
 <!-- New entries go directly below this line. -->
 
+## [2026-07-27] Boots can combine two systems into the one you didn't know you could build
+**When two of your systems turn out to be one job, Boots now makes the new system they
+add up to — and records where it came from — instead of just telling you they overlap.**
+
+Until now a good finding had nowhere to go. Boots could see that two things you built
+were really one thing, say so, and then leave you to do the surgery by hand — so the
+finding sat in your notes as a decision nobody executed. Say "merge these two" and it
+now does it: works out what the combined system is *for*, creates it, and marks both
+originals with where their work went. It will also refuse, out loud and with a reason,
+when combining two things would just give you a new name and no new work.
+
+### Added
+- **boots-rethink:** performs the merge. It reads both systems and what is actually on
+  disk, works out the job neither of them covers, puts that to you before writing
+  anything, and creates the new system with a record of the two it came from. Each
+  original gets a line pointing forward, saying what happened and why.
+- **boots-rethink:** decides what happens to each original separately — some keep
+  running, some become part of the new thing, some are finished. Asked one at a time,
+  because the interesting cases are the ones where the answer differs. Anything still
+  carrying an unfixed problem of its own keeps running rather than being folded away.
+- **boots-rethink:** say "merge these two" or "should X and Y be one system?" and it
+  goes straight to the merge instead of reading your whole set first.
+- **boots-rethink:** before it writes, it tells you exactly which files it is about to
+  change, that your records are not version-controlled, and offers to copy them
+  somewhere safe first.
+
+### Changed
+- **boots-rethink:** the overlap check now leads somewhere. It also draws the line
+  between the two outcomes it used to blur — two things doing the same job with real
+  work in each is a combination; one that does everything the other does and more is a
+  duplicate, and the smaller one goes.
+- **boots-rethink:** refusing is now its own real branch, and it is harder to skip when
+  you named the two systems yourself. Being asked for a merge is not evidence one
+  exists. It also no longer refuses on the grounds that the originals look nearly
+  finished — that is a question about the originals, not about whether the new system
+  has work of its own.
+
+### Fixed
+- **boots-build:** when Boots works through a job with you by hand before building the
+  tool, it now treats the answer you reached together as a first draft rather than the
+  result the finished tool must reproduce. Baking that answer in taught the testing
+  step to check the tool against the first guess instead of against reality. It also
+  now checks what is actually on disk before building on something a note claims is
+  true.
+
+_Tracked up to: 07e3cbde8cccab55c3864283df93771be08fb5d4_
+
+
 ## [2026-07-27] Boots runs somewhere that isn't your laptop
 **Boots now runs in Claude Cowork as an installable plugin — and a session in the
 cloud can find the work you already have on your own computer instead of quietly
