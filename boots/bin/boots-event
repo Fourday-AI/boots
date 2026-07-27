@@ -62,24 +62,12 @@ FORM="$(jsafe "$FORM")"; SESSION_ID="$(jsafe "$SESSION_ID")"
 REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 
 # ─── Which AI host is this running on? ───────────────────────
-# Boots runs on more than Claude Code, and the funnel is useless if every host
-# reports as claude-code. `--platform` (or BOOTS_PLATFORM) wins when the caller
-# knows; otherwise infer from the environment. Claude Cowork gives each session a
-# Linux container whose working tree is a remote-session folder named `rcw-<id>`,
-# with the user's files mounted under /mnt/user-data — those are the two signals
-# we can see from inside. Replace the heuristic with an env marker if Cowork ever
-# exposes one; the fallback stays claude-code.
-detect_platform() {
-  if [ -n "${BOOTS_PLATFORM:-}" ]; then printf '%s' "$BOOTS_PLATFORM"; return; fi
-  case "$REPO_ROOT" in *rcw-*) printf 'cowork'; return ;; esac
-  case "$(pwd 2>/dev/null)" in *rcw-*) printf 'cowork'; return ;; esac
-  if [ -d /mnt/user-data ] && [ "$(uname -s 2>/dev/null)" = "Linux" ]; then
-    printf 'cowork'; return
-  fi
-  printf 'claude-code'
-}
-[ -z "$PLATFORM" ] && PLATFORM="$(detect_platform)"
+# The funnel is useless if every host reports as claude-code. `--platform` wins when
+# the caller knows; otherwise ask boots-platform, which both telemetry layers share
+# so the funnel and the run log can never disagree about the same session.
+[ -z "$PLATFORM" ] && PLATFORM="$("$BIN_DIR/boots-platform" 2>/dev/null || echo "claude-code")"
 PLATFORM="$(jsafe "$PLATFORM")"
+[ -z "$PLATFORM" ] && PLATFORM="claude-code"
 
 # ─── Don't record a move that names no move ──────────────────
 # A transition with both stages empty ("advanced from nothing to nothing") counts

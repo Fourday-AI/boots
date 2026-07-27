@@ -53,6 +53,11 @@ mkdir -p "$ANALYTICS_DIR" 2>/dev/null || true
 jsafe() { printf '%s' "$1" | tr -d '"\\\n\r\t' | cut -c1-64; }
 OS="$(uname -s 2>/dev/null | tr '[:upper:]' '[:lower:]')"
 TS="$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || echo "")"
+# Which AI host — shared with the funnel via boots-platform so the two layers can
+# never disagree. `os` is NOT a substitute: linux-means-container is a guess that
+# breaks the moment a Linux user installs Boots normally.
+PLATFORM="$(jsafe "$("$BIN_DIR/boots-platform" 2>/dev/null || echo "claude-code")")"
+[ -z "$PLATFORM" ] && PLATFORM="claude-code"
 
 # ─── Finalize other sessions' stale pending markers (crash detection) ────
 # Each marker is {"skill":..,"ts":..,"session_id":..} written by the preamble.
@@ -64,8 +69,13 @@ for pf in "$ANALYTICS_DIR"/.pending-*; do
   [ "$sid" = "$SESSION_ID" ] && continue   # our own, still in flight
   p_skill="$(grep -o '"skill":"[^"]*"' "$pf" 2>/dev/null | head -1 | sed 's/"skill":"//;s/"//')"
   p_ts="$(grep -o '"ts":"[^"]*"' "$pf" 2>/dev/null | head -1 | sed 's/"ts":"//;s/"//')"
-  printf '{"v":1,"ts":"%s","event":"skill_run","skill":"%s","outcome":"unknown","duration_s":null,"os":"%s","session_id":"%s"}\n' \
-    "${p_ts:-$TS}" "$(jsafe "${p_skill:-unknown}")" "$OS" "$(jsafe "$sid")" \
+  # The crashed session's OWN platform, carried in the marker — not ours. A local
+  # run can finalize a container's abandoned marker, and attributing that crash to
+  # the laptop that happened to notice it would be a lie about where it happened.
+  # Markers written before platform existed have none: record unknown, don't guess.
+  p_plat="$(grep -o '"platform":"[^"]*"' "$pf" 2>/dev/null | head -1 | sed 's/"platform":"//;s/"//')"
+  printf '{"v":1,"ts":"%s","event":"skill_run","skill":"%s","outcome":"unknown","duration_s":null,"os":"%s","platform":"%s","session_id":"%s"}\n' \
+    "${p_ts:-$TS}" "$(jsafe "${p_skill:-unknown}")" "$OS" "$(jsafe "${p_plat:-unknown}")" "$(jsafe "$sid")" \
     >> "$RUNS_FILE" 2>/dev/null || true
   rm -f "$pf" 2>/dev/null || true
 done
@@ -98,8 +108,8 @@ dur_field="null"
 if [ -n "$DURATION" ] && [ "$DURATION" -ge 0 ] 2>/dev/null && [ "$DURATION" -le "$MAX_DURATION_S" ] 2>/dev/null; then
   dur_field="$DURATION"
 fi
-printf '{"v":1,"ts":"%s","event":"%s","skill":"%s","outcome":"%s","duration_s":%s,"os":"%s","session_id":"%s","installation_id":%s}\n' \
-  "$TS" "$(jsafe "$EVENT_TYPE")" "$(jsafe "$SKILL")" "$(jsafe "$OUTCOME")" "$dur_field" "$OS" "$(jsafe "$SESSION_ID")" "$INSTALL_FIELD" \
+printf '{"v":1,"ts":"%s","event":"%s","skill":"%s","outcome":"%s","duration_s":%s,"os":"%s","platform":"%s","session_id":"%s","installation_id":%s}\n' \
+  "$TS" "$(jsafe "$EVENT_TYPE")" "$(jsafe "$SKILL")" "$(jsafe "$OUTCOME")" "$dur_field" "$OS" "$PLATFORM" "$(jsafe "$SESSION_ID")" "$INSTALL_FIELD" \
   >> "$RUNS_FILE" 2>/dev/null || true
 
 # ─── Trigger sync (backgrounded, fire-and-forget; a no-op without a backend) ──

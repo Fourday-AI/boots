@@ -41,7 +41,7 @@ Deno.serve(async (req) => {
           v: 1, event_timestamp: e.ts, skill: s(e.skill, 50),
           outcome: String(e.outcome).slice(0, 20),
           duration_s: typeof e.duration_s === "number" ? e.duration_s : null,
-          os, installation_id: iid,
+          os, platform: s(e.platform, 32), installation_id: iid,
         });
       } else if (FUNNEL_EVENTS.includes(e.event)) {
         funnel.push({

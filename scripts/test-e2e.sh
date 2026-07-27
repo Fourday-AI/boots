@@ -252,6 +252,35 @@ assert_eq "17h idle session logged as unknown, 5m run kept" \
 assert_has "session id has a random component" 'RANDOM' \
   "$(grep -m1 '_SESSION_ID=' "$REPO/boots/SKILL.md" 2>/dev/null)"
 
+# F9 BOTH layers report the same host. The funnel knowing it's Cowork while the run
+# log says claude-code is worse than neither knowing — it makes the two streams
+# un-joinable and quietly wrong.
+H4="$WORK/layers"; mkdir -p "$H4"; printf 'telemetry: community\n' >"$H4/config.yaml"
+BOOTS_PLATFORM="cowork" BOOTS_HOME="$H4" "$BIN/boots-event" \
+  --system "two-layer" --event created --to clarify 2>/dev/null
+BOOTS_PLATFORM="cowork" BOOTS_SUPABASE_URL="http://127.0.0.1:9" BOOTS_HOME="$H4" \
+  "$BIN/boots-telemetry-log" --skill boots-clarify --duration 12 --outcome success --session-id "L-1" 2>/dev/null
+assert_has "funnel layer records the host" '"platform":"cowork"' "$(tail -1 "$H4/analytics/funnel.jsonl" 2>/dev/null)"
+assert_has "run layer records the same host" '"platform":"cowork"' "$(tail -1 "$H4/analytics/runs.jsonl" 2>/dev/null)"
+
+# F10 a crash is attributed to the host it CRASHED on, not the host that noticed.
+# A laptop finalizing a dead container's marker must not claim the crash as its own.
+printf '{"skill":"boots-build","ts":"2026-01-01T00:00:00Z","session_id":"ghost-1","platform":"cowork"}\n' \
+  >"$H4/analytics/.pending-ghost-1"
+BOOTS_PLATFORM="claude-code" BOOTS_SUPABASE_URL="http://127.0.0.1:9" BOOTS_HOME="$H4" \
+  "$BIN/boots-telemetry-log" --skill boots-scope --outcome success --session-id "L-2" 2>/dev/null
+GHOST="$(grep 'ghost-1' "$H4/analytics/runs.jsonl" 2>/dev/null | tail -1)"
+assert_has "crashed session keeps its own platform" '"platform":"cowork"' "$GHOST"
+assert_has "…and is still recorded as unknown"      '"outcome":"unknown"' "$GHOST"
+
+# F11 a marker from before platform existed must say unknown, not guess the finalizer's
+printf '{"skill":"boots-build","ts":"2026-01-01T00:00:00Z","session_id":"old-1"}\n' \
+  >"$H4/analytics/.pending-old-1"
+BOOTS_PLATFORM="claude-code" BOOTS_SUPABASE_URL="http://127.0.0.1:9" BOOTS_HOME="$H4" \
+  "$BIN/boots-telemetry-log" --skill boots-scope --outcome success --session-id "L-3" 2>/dev/null
+assert_has "pre-platform marker records unknown, not a guess" '"platform":"unknown"' \
+  "$(grep 'old-1' "$H4/analytics/runs.jsonl" 2>/dev/null | tail -1)"
+
 # ─────────────────────────────────────────────────────────────────────────────
 sect "cross-system layer — map + question (offline)"
 # The cross-system skills (boots-rethink, and the map reads in boots/clarify/scope/ship)
