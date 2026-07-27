@@ -28,7 +28,7 @@ STATE_DIR="${BOOTS_HOME:-$HOME/.boots}"
 SYSTEMS_DIR="$STATE_DIR/systems"
 BIN_DIR="$(cd "$(dirname "$0")" && pwd)"
 
-SYSTEM="" EVENT="transition" FROM="" TO="" OUTCOME="advanced" FORM="" PLATFORM="claude-code" SESSION_ID=""
+SYSTEM="" EVENT="transition" FROM="" TO="" OUTCOME="advanced" FORM="" PLATFORM="" SESSION_ID=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --system)     SYSTEM="$2"; shift 2 ;;
@@ -52,8 +52,48 @@ case "$OUTCOME" in advanced|blocked|abandoned) ;; *) OUTCOME="advanced" ;; esac
 
 # Sanitize free-ish fields for JSON safety (strip quotes/backslashes/control, cap).
 jsafe() { printf '%s' "$1" | tr -d '"\\\n\r\t' | cut -c1-64; }
-SYSTEM="$(jsafe "$SYSTEM")"; FROM="$(jsafe "$FROM")"; TO="$(jsafe "$TO")"
-FORM="$(jsafe "$FORM")"; PLATFORM="$(jsafe "$PLATFORM")"; SESSION_ID="$(jsafe "$SESSION_ID")"
+# The slug also indexes a path, so keep it to path-safe characters — no slashes,
+# no dots that could walk out of the systems dir.
+SYSTEM="$(printf '%s' "$SYSTEM" | tr -cd 'a-zA-Z0-9_-' | cut -c1-64)"
+[ -z "$SYSTEM" ] && { echo "boots-event: --system slug is empty after sanitizing" >&2; exit 2; }
+FROM="$(jsafe "$FROM")"; TO="$(jsafe "$TO")"
+FORM="$(jsafe "$FORM")"; SESSION_ID="$(jsafe "$SESSION_ID")"
+
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+
+# ─── Which AI host is this running on? ───────────────────────
+# Boots runs on more than Claude Code, and the funnel is useless if every host
+# reports as claude-code. `--platform` (or BOOTS_PLATFORM) wins when the caller
+# knows; otherwise infer from the environment. Claude Cowork gives each session a
+# Linux container whose working tree is a remote-session folder named `rcw-<id>`,
+# with the user's files mounted under /mnt/user-data — those are the two signals
+# we can see from inside. Replace the heuristic with an env marker if Cowork ever
+# exposes one; the fallback stays claude-code.
+detect_platform() {
+  if [ -n "${BOOTS_PLATFORM:-}" ]; then printf '%s' "$BOOTS_PLATFORM"; return; fi
+  case "$REPO_ROOT" in *rcw-*) printf 'cowork'; return ;; esac
+  case "$(pwd 2>/dev/null)" in *rcw-*) printf 'cowork'; return ;; esac
+  if [ -d /mnt/user-data ] && [ "$(uname -s 2>/dev/null)" = "Linux" ]; then
+    printf 'cowork'; return
+  fi
+  printf 'claude-code'
+}
+[ -z "$PLATFORM" ] && PLATFORM="$(detect_platform)"
+PLATFORM="$(jsafe "$PLATFORM")"
+
+# ─── Don't record a move that names no move ──────────────────
+# A transition with both stages empty ("advanced from nothing to nothing") counts
+# in totals but is invisible to every stage rollup — worse than no row at all.
+# The record is the source of truth, so try to repair from it first.
+SYSTEM_FILE="$SYSTEMS_DIR/$SYSTEM/system.md"
+if [ "$EVENT" != "created" ] && [ -z "$TO" ] && [ -f "$SYSTEM_FILE" ]; then
+  TO="$(jsafe "$(grep -m1 -E '^stage:[[:space:]]*' "$SYSTEM_FILE" 2>/dev/null \
+        | sed -E 's/^stage:[[:space:]]*//' | tr -cd 'a-zA-Z0-9_-')")"
+fi
+if [ -z "$TO" ] && [ -z "$FROM" ]; then
+  echo "boots-event: no --to and no --from (and none on the record) — dropping this event rather than writing a stageless one" >&2
+  exit 0
+fi
 
 TS="$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || echo "")"
 EVENTS_FILE="$SYSTEMS_DIR/$SYSTEM/events.jsonl"
@@ -73,11 +113,17 @@ printf '{"v":1,"ts":"%s","system":"%s","event":"%s","from_stage":%s,"to_stage":%
 # where systems flow and stall. `_repo` is local-only (underscore = stripped before
 # any upload); the system slug is hashed at sync time — so nothing here names your
 # repo or your systems remotely. Doubles as the cross-repo "where's everything" index.
-REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 _REPO_SLUG="$(basename "$REPO_ROOT" 2>/dev/null | tr -cd 'a-zA-Z0-9._-')"
 mkdir -p "$STATE_DIR/analytics" 2>/dev/null || true
 printf '{"v":1,"ts":"%s","event":"%s","system":"%s","from_stage":%s,"to_stage":%s,"outcome":"%s","form":%s,"platform":"%s","_repo":"%s"}\n' \
   "$TS" "$EVENT" "$SYSTEM" "$from_field" "$to_field" "$OUTCOME" "$form_field" "$PLATFORM" "$(jsafe "$_REPO_SLUG")" \
   >> "$STATE_DIR/analytics/funnel.jsonl" 2>/dev/null || true
+
+# Flush the outbound queue (backgrounded, rate-limited, tier-gated, no-op without
+# a backend). A funnel event is often the LAST thing a session does — without this
+# it would sit on disk until some later session happened to run a skill, which on a
+# short-lived host (a Cowork container that goes away) means never.
+SYNC_CMD="$BIN_DIR/boots-telemetry-sync"
+[ -x "$SYNC_CMD" ] && "$SYNC_CMD" >/dev/null 2>&1 &
 
 exit 0

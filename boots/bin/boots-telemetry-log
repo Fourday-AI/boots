@@ -89,8 +89,13 @@ if [ "$TIER" = "community" ]; then
 fi
 
 # ─── Log this run ────────────────────────────────────────────
+# Duration is wall-clock between the preamble and the epilogue, so an idle session
+# left open overnight reports as a 17-hour "run". Past this ceiling the number
+# measures the user's day, not the skill — record it as unknown rather than let it
+# poison every average. 2h is well beyond any real single-skill run.
+MAX_DURATION_S=7200
 dur_field="null"
-if [ -n "$DURATION" ] && [ "$DURATION" -ge 0 ] 2>/dev/null && [ "$DURATION" -le 86400 ] 2>/dev/null; then
+if [ -n "$DURATION" ] && [ "$DURATION" -ge 0 ] 2>/dev/null && [ "$DURATION" -le "$MAX_DURATION_S" ] 2>/dev/null; then
   dur_field="$DURATION"
 fi
 printf '{"v":1,"ts":"%s","event":"%s","skill":"%s","outcome":"%s","duration_s":%s,"os":"%s","session_id":"%s","installation_id":%s}\n' \

@@ -68,7 +68,10 @@ if [ -f "$FUNNEL_FILE" ]; then
     while IFS= read -r line; do
       [ -z "$line" ] && continue
       case "$line" in '{'*) ;; *) continue ;; esac
-      line="$(printf '%s' "$line" | sed 's/,"_repo":"[^"]*"//')"
+      # Underscore prefix = local-only, by convention. Strip EVERY such field, not
+      # just the ones we happen to write today: anything hand-appended to this
+      # buffer (a stray _folder, a _path) must not leave the machine either.
+      line="$(printf '%s' "$line" | sed -E 's/,"_[A-Za-z0-9_]+":"[^"]*"//g; s/,"_[A-Za-z0-9_]+":(-?[0-9.]+|true|false|null)//g')"
       sys="$(printf '%s' "$line" | grep -o '"system":"[^"]*"' | head -1 | sed 's/"system":"//;s/"$//')"
       if [ -n "$sys" ]; then line="$(printf '%s' "$line" | sed "s/\"system\":\"$sys\"/\"system\":\"$(_hash "$sys")\"/")"; fi
       add "$line"; SENT_F=$((SENT_F+1))

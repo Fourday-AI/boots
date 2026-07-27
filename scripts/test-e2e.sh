@@ -142,7 +142,11 @@ else
 
     # T1 community tier: slug hashed, _repo stripped, runs keep installation_id, cursors advance
     H="$WORK/tel-comm"; mkdir -p "$H/analytics"
-    printf '{"v":1,"ts":"%s","event":"created","system":"my-secret-system","from_stage":null,"to_stage":"clarify","outcome":"advanced","form":null,"platform":"claude-code","_repo":"private-repo-name"}\n' "$ts" >"$H/analytics/funnel.jsonl"
+    # The extra _folder/_count fields are deliberate: underscore means local-only by
+    # convention, and the transform must honour the CONVENTION, not a list of the
+    # keys we happen to write today. Anything appended to this buffer by another
+    # host — or by hand — has to be stripped too.
+    printf '{"v":1,"ts":"%s","event":"created","system":"my-secret-system","from_stage":null,"to_stage":"clarify","outcome":"advanced","form":null,"platform":"claude-code","_repo":"private-repo-name","_folder":"private-folder-name","_count":7}\n' "$ts" >"$H/analytics/funnel.jsonl"
     printf '{"v":1,"ts":"%s","event":"skill_run","skill":"boots-clarify","outcome":"success","duration_s":2.0,"os":"darwin","installation_id":"keep-me-123"}\n' "$ts" >"$H/analytics/runs.jsonl"
     BOOTS_HOME="$H" "$BIN/boots-config" set telemetry community >/dev/null 2>&1
     BOOTS_HOME="$H" BOOTS_SUPABASE_URL="$MOCK_URL" BOOTS_SUPABASE_ANON_KEY="test-anon" "$BIN/boots-telemetry-sync"
@@ -150,6 +154,8 @@ else
     assert_not "community: plaintext slug never sent" "my-secret-system" "$SENT"
     assert_not "community: _repo stripped"            "private-repo-name" "$SENT"
     assert_not "community: _repo key stripped"        '"_repo"'           "$SENT"
+    assert_not "community: every _-prefixed field stripped, not just _repo" "private-folder-name" "$SENT"
+    assert_not "community: _-prefixed numeric field stripped"               '"_count"'            "$SENT"
     # the funnel record's system must now be a 16-hex hash
     HASHED="$(printf '%s' "$SENT" | grep -o '"event":"created"[^}]*"system":"[0-9a-f]\{16\}"' | head -1)"
     [ -n "$HASHED" ] && ok "community: slug replaced by 16-hex hash" || bad "community: slug hashed" "no hashed system in: $SENT"
@@ -195,6 +201,56 @@ ROLL="$(BOOTS_HOME="$H" "$BIN/boots-analytics" --brief 2>/dev/null)"
 assert_has "rollup emits FUNNEL line"   "FUNNEL"   "$ROLL"
 assert_has "rollup emits PIPELINE line" "PIPELINE" "$ROLL"
 assert_has "rollup lists the system"    "demo-sys" "$ROLL"
+
+# ─────────────────────────────────────────────────────────────────────────────
+sect "funnel — host attribution and stageless events (offline)"
+# Boots runs on more than one AI host. Every one of these failed silently in the
+# wild: Cowork sessions reported as claude-code, and a transition that named no
+# stage counted in the totals while being invisible to every stage rollup.
+H2="$WORK/funnel-host"; mkdir -p "$H2" "$WORK/hosts/rcw-01abcdef/x" "$WORK/hosts/plain-repo"
+emit_from() { ( cd "$1" && shift && BOOTS_HOME="$H2" "$BIN/boots-event" "$@" 2>/dev/null ); }
+FUN2="$H2/analytics/funnel.jsonl"
+
+# F1 a Cowork session (working tree under an rcw-<id> folder) is attributed to cowork
+emit_from "$WORK/hosts/rcw-01abcdef/x" --system "host-sys" --event created --to clarify
+assert_has "cowork session tagged platform:cowork" '"platform":"cowork"' "$(tail -1 "$FUN2" 2>/dev/null)"
+
+# F2 an ordinary local repo still reports claude-code — the detection must not over-fire
+emit_from "$WORK/hosts/plain-repo" --system "host-sys" --event transition --from clarify --to scope
+assert_has "local session tagged platform:claude-code" '"platform":"claude-code"' "$(tail -1 "$FUN2" 2>/dev/null)"
+
+# F3 an explicit --platform always beats detection (a skill that knows, wins)
+emit_from "$WORK/hosts/rcw-01abcdef/x" --system "host-sys" --event transition --from scope --to build --platform claude-code
+assert_has "explicit --platform overrides detection" '"platform":"claude-code"' "$(tail -1 "$FUN2" 2>/dev/null)"
+
+# F4 a stageless transition is REPAIRED from the record — the record is the truth
+mkdir -p "$H2/systems/host-sys"; printf 'stage: verify\nstatus: active\n' >"$H2/systems/host-sys/system.md"
+BOOTS_HOME="$H2" "$BIN/boots-event" --system "host-sys" --event transition 2>/dev/null
+assert_has "stageless transition repaired from system.md" '"to_stage":"verify"' "$(tail -1 "$FUN2" 2>/dev/null)"
+
+# F5 …and DROPPED when there is no record to repair from, rather than written stageless
+BEFORE="$(wc -l <"$FUN2" | tr -d ' ')"
+BOOTS_HOME="$H2" "$BIN/boots-event" --system "no-record-sys" --event transition 2>/dev/null
+assert_eq "stageless transition with no record is dropped" "$BEFORE" "$(wc -l <"$FUN2" | tr -d ' ')"
+
+# F6 the slug indexes a path — it must never walk out of the systems dir
+BOOTS_HOME="$H2" "$BIN/boots-event" --system "../../../etc/evil" --event created --to clarify 2>/dev/null
+assert_eq "traversal slug cannot escape the systems dir" "" "$(find "$H2/.." -maxdepth 2 -name 'evil*' 2>/dev/null)"
+
+# F7 duration: an idle session left open overnight must not be logged as a run time
+H3="$WORK/dur"; mkdir -p "$H3"; printf 'telemetry: community\n' >"$H3/config.yaml"
+BOOTS_SUPABASE_URL="http://127.0.0.1:9" BOOTS_HOME="$H3" "$BIN/boots-telemetry-log" \
+  --skill boots-scope --duration 62374 --outcome success --session-id "dur-1" 2>/dev/null
+BOOTS_SUPABASE_URL="http://127.0.0.1:9" BOOTS_HOME="$H3" "$BIN/boots-telemetry-log" \
+  --skill boots-scope --duration 300 --outcome success --session-id "dur-2" 2>/dev/null
+DURS="$(grep -o '"duration_s":[^,]*' "$H3/analytics/runs.jsonl" 2>/dev/null | tr '\n' ' ')"
+assert_eq "17h idle session logged as unknown, 5m run kept" \
+  '"duration_s":null "duration_s":300' "$(printf '%s' "$DURS" | sed 's/ $//')"
+
+# F8 session ids carry entropy — a container and a laptop must not mint the same id
+# and finalize each other's pending markers as crashes.
+assert_has "session id has a random component" 'RANDOM' \
+  "$(grep -m1 '_SESSION_ID=' "$REPO/boots/SKILL.md" 2>/dev/null)"
 
 # ─────────────────────────────────────────────────────────────────────────────
 sect "cross-system layer — map + question (offline)"

@@ -29,8 +29,15 @@ _TEL=$(~/.claude/skills/boots/bin/boots-config get telemetry 2>/dev/null || echo
 _TEL_PROMPTED=$([ -f ~/.boots/.consent-prompted ] && echo "yes" || echo "no")
 _PROACTIVE=$(~/.claude/skills/boots/bin/boots-config get proactive 2>/dev/null || echo "true")
 _BRANCH=$(git branch --show-current 2>/dev/null || echo "unknown")
-_SESSION_ID="$$-$(date +%s)"
+# PID + time alone collide across machines — a container reliably hands out low PIDs,
+# so a Cowork session and a local one starting the same second mint the SAME id, and
+# each finalizes the other's pending marker as a crash. The random suffix separates them.
+_SESSION_ID="$$-$(date +%s)-${RANDOM:-0}"
 _TEL_START=$(date +%s)
+# Flush anything the previous session left queued (backgrounded, rate-limited,
+# tier-gated, silent without a backend). Sessions on short-lived hosts can end
+# before their last event ships; this is the catch-up.
+[ "$_TEL" != "off" ] && [ -x ~/.claude/skills/boots/bin/boots-telemetry-sync ] && ~/.claude/skills/boots/bin/boots-telemetry-sync >/dev/null 2>&1 &
 echo "TELEMETRY: ${_TEL:-off}"
 echo "TEL_PROMPTED: $_TEL_PROMPTED"
 echo "PROACTIVE: $_PROACTIVE"
