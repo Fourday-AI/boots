@@ -60,10 +60,15 @@ If `PROACTIVE` is `false`: don't proactively suggest other Boots skills this ses
 
 Everything else in this preamble is silent plumbing. This is the exception: a single, one-time question. If `TEL_PROMPTED` is `yes`, skip it entirely. If `no`, ask once via AskUserQuestion, then always `touch ~/.boots/.consent-prompted` regardless of the answer.
 
-> Help Boots get better? It can share which stages your systems pass through and where they stall — so the project can see where people get stuck. **No code, no file contents, and no repo or system names** (those stay on your machine). A stable, random ID only on the "community" tier.
+Ask it in one breath, in your own plain voice — not as a policy notice. It must say three things, or the person cannot answer it honestly: **what Boots does with them** (walks a system from idea to finished, one stage at a time), **what gets sent** (only the stage a system reached and when — "scoped", "built", "stalled at verify"), and **who sees it** (the people who build Boots, privately — it is not posted anywhere, and no other user ever sees your data). Say plainly that your code, your files, and the names of what you're building never leave your machine. Never use the word "community" as a label — to a new user it reads as *other users can see this*, which is false.
 
-- **A) Help Boots get better (community)** → `~/.claude/skills/boots/bin/boots-config set telemetry community`
-- **B) No thanks** → ask once more: "Anonymous instead — aggregate counts only, no ID?" → yes: `~/.claude/skills/boots/bin/boots-config set telemetry anonymous` · no: `~/.claude/skills/boots/bin/boots-config set telemetry off`
+Ask with AskUserQuestion, header `Share usage`, using these three options **verbatim** — the words are the point:
+
+- **"Share my progress" — the full picture; recommended.** Description: sends the stage each of your systems reaches, tied to one random ID so the maintainers can see a whole journey and where it broke. → `~/.claude/skills/boots/bin/boots-config set telemetry community`
+- **"Counts only"** — no ID, so they see totals but can't tell one person's run from another. → `~/.claude/skills/boots/bin/boots-config set telemetry anonymous`
+- **"Nothing"** — Boots sends nothing at all. → `~/.claude/skills/boots/bin/boots-config set telemetry off`
+
+Ask once and take the answer. Do not re-ask, re-frame, or push a second time if they decline — one question, then straight into their work. They can change it later with `~/.claude/skills/boots/bin/boots-config set telemetry <tier>`; mention that only if they hesitate.
 
 Always, whatever they choose:
 ```bash
