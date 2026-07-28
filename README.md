@@ -192,15 +192,13 @@ Nothing has to live in your head between steps. Boots keeps its own running note
 
 Boots handles the unglamorous "finish it" details correctly.
 
-|                                   |                                                                                                            |
-| --------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| **It really finishes.**           | Reviewing, proving it works, and shipping are different jobs, so Boots does them as separate steps — nothing gets a single "looks done" rubber-stamp. |
-| **It trusts reality, not its notes.** | Before Boots tells you where things stand, it checks its own notes against what actually got built — and if they disagree, what's real wins. |
-| **It builds the right kind of thing.** | Boots picks what to build from what the job actually needs — not from whatever the project you're in happens to be made of. |
-| **It proves things really work.** | "Works" means Boots actually runs the thing the way you would — not just "the tests passed." |
-| **Nothing you did by hand is forgotten.** | Every manual step you took to make it run gets built into the tool — or noted out loud as left for later — before it ships. |
-| **Lessons stick.**                | When a finished tool teaches you something, Boots doesn't just remember it — it changes the tool to obey it. |
-| **Shipping isn't the end.**       | Boots keeps watching live systems and checks the *answer*, not just that the job ran — because a tool can run green and be silently wrong. When it drifts, Boots evolves it with you. |
+- **It really finishes.** Reviewing, proving it works, and shipping are different jobs, so Boots does them as separate steps — nothing gets a single "looks done" rubber-stamp.
+- **It trusts reality, not its notes.** Before Boots tells you where things stand, it checks its own notes against what actually got built — and if they disagree, what's real wins.
+- **It builds the right kind of thing.** Boots picks what to build from what the job actually needs — not from whatever the project you're in happens to be made of.
+- **It proves things really work.** "Works" means Boots actually runs the thing the way you would — not just "the tests passed."
+- **Nothing you did by hand is forgotten.** Every manual step you took to make it run gets built into the tool — or noted out loud as left for later — before it ships.
+- **Lessons stick.** When a finished tool teaches you something, Boots doesn't just remember it — it changes the tool to obey it.
+- **Shipping isn't the end.** Boots keeps watching live systems and checks the *answer*, not just that the job ran — because a tool can run green and be silently wrong. When it drifts, Boots evolves it with you.
 
 <br/>
 
@@ -320,13 +318,11 @@ It's the one part of Boots allowed to disagree with your plan.
 
 ## What Boots is not
 
-|                              |                                                                                                        |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------ |
-| **Not an agent framework.**  | Boots doesn't tell you how to build agents. It tells you how to finish the systems you build with them. |
-| **Not just a chatbot.**      | Yes, you talk to it — but it isn't a blank chat window you have to steer. Boots keeps track of every system you're building and drives each one to finished. |
-| **Not a task manager.**      | Tasks are a side effect. Boots tracks systems, what each one is, and whether it's actually shipped.      |
-| **Not a workflow builder.**  | No drag-and-drop pipelines. The pipeline is a fixed set of steps that each do real, different work.      |
-| **Not tied to one project.** | Boots works in any project and builds anything Claude Code can. What it builds follows the work.         |
+- **Not an agent framework.** Boots doesn't tell you how to build agents. It tells you how to finish the systems you build with them.
+- **Not just a chatbot.** Yes, you talk to it — but it isn't a blank chat window you have to steer. Boots keeps track of every system you're building and drives each one to finished.
+- **Not a task manager.** Tasks are a side effect. Boots tracks systems, what each one is, and whether it's actually shipped.
+- **Not a workflow builder.** No drag-and-drop pipelines. The pipeline is a fixed set of steps that each do real, different work.
+- **Not tied to one project.** Boots works in any project and builds anything Claude Code can. What it builds follows the work.
 
 <br/>
 
