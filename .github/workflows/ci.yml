@@ -22,6 +22,26 @@ jobs:
       - name: Generated skills are in sync with their templates
         run: bun run gen:skill-docs:check
 
+      # dist/cowork/ is COMMITTED build output — it is what users install, because
+      # .claude-plugin/marketplace.json points at it and every push is a release.
+      # So a stale dist/ is a shipped bug, not a build artifact nobody sees. Rebuild
+      # from the templates and fail if the result differs from what's committed.
+      # This is the gate that makes drift impossible; a hand-made snapshot drifting
+      # unnoticed is the exact failure this replaces.
+      - name: Published plugin bundle is in sync with the templates
+        run: |
+          set -euo pipefail
+          bun run build:cowork
+          if ! git diff --exit-code --stat -- dist/; then
+            echo "::error::dist/ is stale. Run 'bun run build:cowork' and commit the result."
+            exit 1
+          fi
+
+      # The catalog Claude Code reads when a user runs `/plugin marketplace add`.
+      # A malformed one means the marketplace silently fails to load for everyone.
+      - name: Marketplace catalog is valid
+        run: bun run check:marketplace
+
       # Offline, no network, no side effects outside a temp BOOTS_HOME.
       - name: End-to-end tests
         run: bun run test

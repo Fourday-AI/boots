@@ -19,4 +19,37 @@ if ! bun run gen:skill-docs:check >/tmp/boots-freshness.$$  2>&1; then
   exit 1
 fi
 rm -f /tmp/boots-freshness.$$
+
+# dist/cowork/ is committed build output that users install directly — the
+# marketplace catalog points at it and every push is a release. A stale bundle is
+# therefore a shipped bug, not an artifact nobody sees, so it gets the same gate
+# as the skills. Unlike the check above this one REBUILDS, because there is no
+# dry-run mode; if that changes the tree, the commit stops and you re-stage.
+if [ -d dist/cowork ]; then
+  if ! bun run build:cowork >/tmp/boots-plugin.$$ 2>&1; then
+    echo "✗ the Cowork plugin bundle failed to build." >&2
+    tail -20 /tmp/boots-plugin.$$ >&2
+    rm -f /tmp/boots-plugin.$$
+    exit 1
+  fi
+  rm -f /tmp/boots-plugin.$$
+  if ! git diff --quiet -- dist/; then
+    echo "✗ dist/ is stale — the templates changed but the published bundle wasn't rebuilt." >&2
+    git diff --name-only -- dist/ | sed 's/^/    /' >&2
+    echo "  It has just been rebuilt for you. Re-stage dist/ and commit again." >&2
+    exit 1
+  fi
+fi
+
+# The catalog users add. Malformed means the marketplace silently does not load.
+if [ -f .claude-plugin/marketplace.json ]; then
+  if ! bun run check:marketplace >/tmp/boots-mp.$$ 2>&1; then
+    echo "✗ .claude-plugin/marketplace.json is invalid:" >&2
+    grep -E '^\s+✗' /tmp/boots-mp.$$ >&2 || tail -10 /tmp/boots-mp.$$ >&2
+    rm -f /tmp/boots-mp.$$
+    exit 1
+  fi
+  rm -f /tmp/boots-mp.$$
+fi
+
 exit 0
