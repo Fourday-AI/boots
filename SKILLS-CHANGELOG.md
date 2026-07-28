@@ -7,6 +7,59 @@ inferred from the diff, not written by hand. Each entry ends with a
 
 <!-- New entries go directly below this line. -->
 
+## [2026-07-28] Install Boots in one click, and never think about updating it again
+**Boots now installs into Claude Cowork as a plugin — paste one address, click install —
+and every fix reaches you on its own, with nothing to download and no version to watch.**
+
+Until now Boots was a clone-and-run-a-setup-script affair, which is fine in a terminal
+and wrong everywhere else. On Cowork you can now add it the way you add anything else:
+one repository address, then install. More importantly, updates stop being your problem.
+Every fix becomes the next version the moment it lands, so an install can't quietly rot
+into a copy that's months behind while looking perfectly healthy — which is exactly what
+happened to an early Cowork user, for a whole session, with nothing to indicate it.
+
+The docs got the matching correction. Boots had been describing itself as a Claude Code
+tool throughout, including in the one file a Cowork user reads *before* installing.
+
+### Added
+- **Install on Cowork:** paste `https://github.com/Fourday-AI/boots` into Add
+  marketplace, then install Boots. No clone, no setup script, no paths to get right.
+- **Updates take care of themselves.** Nothing to download and no release to wait for.
+  You can pull the latest immediately if you want it, but you don't have to — which is
+  why there's no "update Boots" step on Cowork; there's nothing for you to do.
+
+### Changed
+- **What Boots tells you it can build now depends on the tool you're in.** The list of
+  shapes differs between Claude Code and Cowork, and the write-up now says so instead of
+  quietly showing everyone the Claude Code list. Cowork's six extra shapes are named —
+  including the one for work that runs on a clock without you, which is what most
+  "every Monday morning" asks actually want.
+- **Where your systems live is explained per tool.** On Cowork a session is a scratch
+  space that gets wiped, so Boots keeps your records in a folder you've connected and
+  tells you which one it picked — rather than writing them somewhere about to vanish.
+  That's now stated up front, alongside the one thing to set up before your first run.
+- **Turning telemetry off no longer assumes one install location.** Ask Boots and it
+  runs the right command wherever it lives; the typed-out path is there for Claude Code.
+
+### Fixed
+- **Every skill:** the one-time question about sharing usage no longer reads like a
+  privacy policy. It now says what Boots does with you, exactly what gets sent (the
+  stage a system reached — "scoped", "built", "stalled"), and who sees it, in plain
+  words. The word "community" is gone: it read as *other users can see this*, which was
+  never true. It asks once and takes your answer instead of pushing back when you
+  decline.
+- **The feature list** above the pipeline was rendering as a blank strip — a table with
+  no header row. It reads as a list again.
+
+### Internal
+- The published bundle carries no version string, deliberately: the commit is the
+  version, which is what makes updates arrive without anyone bumping a number. The build
+  and catalog checks both treat a *present* version as an error, and CI plus the
+  pre-commit hook rebuild the bundle and fail if what's committed disagrees with the
+  templates — so a stale copy cannot be published by accident.
+
+_Tracked up to: ee7b008f7c9b9761e1cfbb7e3ff0ace42d7c82f6_
+
 ## [2026-07-27] Boots can combine two systems into the one you didn't know you could build
 **When two of your systems turn out to be one job, Boots now makes the new system they
 add up to — and records where it came from — instead of just telling you they overlap.**
