@@ -1,0 +1,118 @@
+#!/usr/bin/env bash
+# boots-telemetry-sync — ship opted-in telemetry to the Boots edge function.
+#
+# Fire-and-forget, backgrounded from boots-telemetry-log. Rate-limited to once
+# per 5 min. Cursor-based (never re-sends). Strips everything identifying before
+# it leaves the machine, then POSTs to the telemetry-ingest edge function (never
+# the DB directly).
+#
+# Privacy, enforced here on the client before anything is sent:
+#   - `_repo` (local-only repo name) is stripped from every funnel record.
+#   - the system slug is HASHED with a per-install random salt — opaque, stable
+#     within your install (so a system's path through the funnel still links up),
+#     un-reversible and un-correlatable across installs.
+#   - on the `anonymous` tier the installation_id is stripped too.
+#   - no code, no file contents, no paths ever enter these buffers to begin with.
+#
+# Dormant until supabase/config.sh is filled in (a provisioned project) — with no
+# URL it exits silently, so nothing is sent while the backend doesn't exist.
+#
+# Env overrides (testing): BOOTS_HOME, BOOTS_DIR, BOOTS_SUPABASE_URL
+set -uo pipefail
+
+_SELF="$(cd "$(dirname "$0")" && pwd -P)"
+BOOTS_DIR="${BOOTS_DIR:-$(cd "$_SELF/../.." && pwd -P)}"
+STATE_DIR="${BOOTS_HOME:-$HOME/.boots}"
+ANALYTICS_DIR="$STATE_DIR/analytics"
+CONFIG_CMD="$_SELF/boots-config"
+RATE_FILE="$ANALYTICS_DIR/.last-sync-time"
+
+FUNNEL_FILE="$ANALYTICS_DIR/funnel.jsonl"
+RUNS_FILE="$ANALYTICS_DIR/runs.jsonl"
+FCUR_FILE="$ANALYTICS_DIR/.sync-cursor-funnel"
+RCUR_FILE="$ANALYTICS_DIR/.sync-cursor-runs"
+
+# ─── Config ──────────────────────────────────────────────────
+if [ -z "${BOOTS_SUPABASE_URL:-}" ] && [ -f "$BOOTS_DIR/supabase/config.sh" ]; then
+  . "$BOOTS_DIR/supabase/config.sh"
+fi
+URL="${BOOTS_SUPABASE_URL:-}"; KEY="${BOOTS_SUPABASE_ANON_KEY:-}"
+[ -z "$URL" ] && exit 0                      # no backend provisioned → dormant
+
+TIER="$("$CONFIG_CMD" get telemetry 2>/dev/null || echo off)"
+[ "$TIER" = "off" ] && exit 0
+
+# ─── Rate limit: once per 5 min ──────────────────────────────
+if [ -f "$RATE_FILE" ] && [ -z "$(find "$RATE_FILE" -mmin +5 2>/dev/null)" ]; then exit 0; fi
+mkdir -p "$ANALYTICS_DIR"
+
+# ─── Hash salt (random, per-install; makes the system slug opaque) ──
+SALT_FILE="$STATE_DIR/.hash-salt"
+SALT="$(cat "$SALT_FILE" 2>/dev/null || true)"
+if [ -z "$SALT" ]; then
+  SALT="$( (uuidgen 2>/dev/null || od -An -tx1 -N16 /dev/urandom 2>/dev/null | tr -d ' \n') )"
+  printf '%s' "$SALT" > "$SALT_FILE" 2>/dev/null || true
+fi
+_hash() { printf '%s%s' "$SALT" "$1" | { shasum -a 256 2>/dev/null || sha256sum 2>/dev/null; } | cut -c1-16; }
+
+_cursor() { local c; c="$(cat "$1" 2>/dev/null | tr -dc 0-9)"; echo "${c:-0}"; }
+
+BATCH=""; SENT_F=0; SENT_R=0; COUNT=0
+add() { [ "$COUNT" -gt 0 ] && BATCH="$BATCH,"; BATCH="$BATCH$1"; COUNT=$((COUNT+1)); }
+
+# ─── Funnel records: strip _repo, hash system ────────────────
+if [ -f "$FUNNEL_FILE" ]; then
+  FCUR="$(_cursor "$FCUR_FILE")"; TOTAL="$(wc -l < "$FUNNEL_FILE" | tr -d ' ')"
+  [ "$FCUR" -gt "$TOTAL" ] 2>/dev/null && FCUR=0
+  if [ "$FCUR" -lt "$TOTAL" ] 2>/dev/null; then
+    while IFS= read -r line; do
+      [ -z "$line" ] && continue
+      case "$line" in '{'*) ;; *) continue ;; esac
+      # Underscore prefix = local-only, by convention. Strip EVERY such field, not
+      # just the ones we happen to write today: anything hand-appended to this
+      # buffer (a stray _folder, a _path) must not leave the machine either.
+      line="$(printf '%s' "$line" | sed -E 's/,"_[A-Za-z0-9_]+":"[^"]*"//g; s/,"_[A-Za-z0-9_]+":(-?[0-9.]+|true|false|null)//g')"
+      sys="$(printf '%s' "$line" | grep -o '"system":"[^"]*"' | head -1 | sed 's/"system":"//;s/"$//')"
+      if [ -n "$sys" ]; then line="$(printf '%s' "$line" | sed "s/\"system\":\"$sys\"/\"system\":\"$(_hash "$sys")\"/")"; fi
+      add "$line"; SENT_F=$((SENT_F+1))
+      [ "$COUNT" -ge 100 ] && break
+    done < <(tail -n "+$((FCUR+1))" "$FUNNEL_FILE")
+  fi
+fi
+
+# ─── Run records: strip installation_id on anonymous tier ────
+if [ -f "$RUNS_FILE" ] && [ "$COUNT" -lt 100 ]; then
+  RCUR="$(_cursor "$RCUR_FILE")"; TOTAL="$(wc -l < "$RUNS_FILE" | tr -d ' ')"
+  [ "$RCUR" -gt "$TOTAL" ] 2>/dev/null && RCUR=0
+  if [ "$RCUR" -lt "$TOTAL" ] 2>/dev/null; then
+    while IFS= read -r line; do
+      [ -z "$line" ] && continue
+      case "$line" in '{'*) ;; *) continue ;; esac
+      [ "$TIER" = "anonymous" ] && line="$(printf '%s' "$line" | sed 's/,"installation_id":"[^"]*"//; s/,"installation_id":null//')"
+      add "$line"; SENT_R=$((SENT_R+1))
+      [ "$COUNT" -ge 100 ] && break
+    done < <(tail -n "+$((RCUR+1))" "$RUNS_FILE")
+  fi
+fi
+
+touch "$RATE_FILE" 2>/dev/null || true
+[ "$COUNT" -eq 0 ] && exit 0
+
+# ─── POST to the edge function (never the DB directly) ───────
+RESP="$(mktemp "${TMPDIR:-/tmp}/boots-sync-XXXXXX")" || exit 0
+trap 'rm -f "$RESP"' EXIT
+HTTP="$(curl -s -w '%{http_code}' --max-time 10 -o "$RESP" \
+  -X POST "${URL}/functions/v1/telemetry-ingest" \
+  -H "Content-Type: application/json" -H "apikey: ${KEY}" \
+  -d "[$BATCH]" 2>/dev/null || echo 000)"
+
+case "$HTTP" in
+  2*)
+    INSERTED="$(grep -o '"inserted":[0-9]*' "$RESP" 2>/dev/null | grep -o '[0-9]*' | head -1 || echo 0)"
+    if [ "${INSERTED:-0}" -gt 0 ] 2>/dev/null; then
+      echo "$(( $(_cursor "$FCUR_FILE") + SENT_F ))" > "$FCUR_FILE" 2>/dev/null || true
+      echo "$(( $(_cursor "$RCUR_FILE") + SENT_R ))" > "$RCUR_FILE" 2>/dev/null || true
+    fi
+    ;;
+esac
+exit 0

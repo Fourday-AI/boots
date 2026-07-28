@@ -10,6 +10,7 @@
     "gen:skill-docs:check": "bun run scripts/gen-skill-docs.ts --dry-run",
     "build:cowork": "bun run scripts/gen-skill-docs.ts --host cowork && bun run scripts/build-plugin.ts --host cowork",
     "build:cowork:check": "bun run scripts/build-plugin.ts --host cowork --check",
+    "check:marketplace": "bun run scripts/check-marketplace.ts",
     "test": "bash scripts/test-e2e.sh",
     "test:live": "bash scripts/test-e2e.sh --live",
     "test:install": "bash scripts/test-install.sh",

@@ -137,25 +137,28 @@ if (!CHECK_ONLY) {
   // 2. The manifest. Description and keywords are the marketplace's copy, so they
   //    are written for a person browsing, not for the agent.
   //
-  //    A plugin manifest version must be semver (MAJOR.MINOR.PATCH). Boots' own
-  //    VERSION file is not required to be — it is compared as a string by
-  //    boots-update-check — and today it is `0.1.0.0`, which a manifest validator
-  //    rejects. Normalise rather than fail, but SAY SO: a silently rewritten
-  //    version number is how an install ends up claiming to be something it isn't.
+  //    THE MANIFEST DELIBERATELY CARRIES NO `version`, AND THAT IS THE WHOLE
+  //    UPDATE MECHANISM. Claude Code resolves a plugin's version from the first
+  //    of: plugin.json `version` → the marketplace entry's `version` → the git
+  //    commit SHA of the source. A version string PINS the plugin: an installed
+  //    copy compares the resolved version against its own and, when they match,
+  //    `/plugin update` and the background auto-update both skip it and report
+  //    "already at the latest version". So writing `0.1.0` here would mean every
+  //    fix pushed after a user's first install is invisible to them until
+  //    somebody remembers to bump VERSION.
+  //
+  //    That failure has already happened to this project once, in a different
+  //    costume: a Cowork user ran a months-stale hand-made snapshot for a whole
+  //    session because nothing made staleness visible. Omitting `version` makes
+  //    every commit a new version, so `git push` IS the release and users cannot
+  //    silently fall behind. Do not add it back without replacing it with a
+  //    release process that bumps VERSION on every user-visible change.
+  //
+  //    VERSION still ships in the bundle (step 3) so an installed copy can say
+  //    which release it came from — it just isn't the update key.
   const rawVersion = fs.readFileSync(path.join(ROOT, 'VERSION'), 'utf-8').trim();
-  let version = rawVersion;
-  if (!/^\d+\.\d+\.\d+$/.test(rawVersion)) {
-    const parts = rawVersion.split('.').filter(p => /^\d+$/.test(p));
-    while (parts.length < 3) parts.push('0');
-    version = parts.slice(0, 3).join('.');
-    console.log(
-      `NOTE: VERSION is '${rawVersion}', which is not semver — the manifest uses ` +
-      `'${version}'. Consider making VERSION semver so the two cannot disagree.`,
-    );
-  }
   const manifest = {
     name: 'boots',
-    version,
     description:
       `A companion for building and finishing AI systems in ${hostConfig.platform.runtime}. ` +
       `Holds a model of every system you have in flight, always has the one next step, ` +
@@ -171,7 +174,8 @@ if (!CHECK_ONLY) {
   written.push('.claude-plugin/plugin.json');
 
   // 3. VERSION, so an installed copy can tell itself apart from a published one.
-  fs.writeFileSync(path.join(OUT, 'VERSION'), version + '\n');
+  //    Informational only — see the note above on why it is not the update key.
+  fs.writeFileSync(path.join(OUT, 'VERSION'), rawVersion + '\n');
   written.push('VERSION');
 
   // 4. README, if the repo has one worth shipping.
@@ -193,7 +197,15 @@ else {
   try {
     const m = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
     if (!m.name) problems.push('plugin.json has no name');
-    if (!m.version) problems.push('plugin.json has no version');
+    // The INVERSE of the usual check, on purpose. A `version` here pins the
+    // plugin and silently stops users receiving updates — see the manifest note
+    // above. Absence is the correct state; presence is the bug.
+    if (m.version) {
+      problems.push(
+        `plugin.json declares version '${m.version}' — this pins the plugin and ` +
+        `stops installed copies receiving updates. Omit it so the commit SHA is the version.`,
+      );
+    }
   } catch (e) {
     problems.push(`plugin.json is not valid JSON: ${e}`);
   }

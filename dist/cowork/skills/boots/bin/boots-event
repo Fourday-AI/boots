@@ -1,0 +1,117 @@
+#!/usr/bin/env bash
+# boots-event — append one funnel event (Layer A) to a system's events.jsonl.
+#
+# The funnel is Boots-native telemetry: the unit is a SYSTEM moving through a
+# STAGE, event-sourced next to the prose log each stage already writes. This is
+# the source of truth the router/surface roll up into "where do systems stall".
+#
+# Events live in the global Boots home (~/.boots/systems/<slug>/events.jsonl),
+# alongside the system's record — NOT per-repo. A system is the user's work and
+# must be findable from any directory, so its records have one stable home
+# regardless of where the user is standing. A stage skill calls this once, at its
+# transition, after it writes its session log. Override the home with BOOTS_HOME.
+#
+# Usage:
+#   boots-event --system <slug> --event transition --from <stage> --to <stage> \
+#       [--outcome advanced|blocked|abandoned] [--form <form>] [--platform <p>] \
+#       [--session-id <id>]
+#   boots-event --system <slug> --event created  --to clarify
+#   boots-event --system <slug> --event shipped  --from verify --to ship --outcome advanced
+#
+# Writes to the global Boots home (~/.boots), findable from anywhere. Never fails
+# a skill: telemetry gating is checked, but the local funnel is written regardless
+# of the remote tier — it powers local dashboards even with telemetry off. Set
+# BOOTS_FUNNEL=off to suppress even the local write.
+set -uo pipefail
+
+STATE_DIR="${BOOTS_HOME:-$HOME/.boots}"
+SYSTEMS_DIR="$STATE_DIR/systems"
+BIN_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+SYSTEM="" EVENT="transition" FROM="" TO="" OUTCOME="advanced" FORM="" PLATFORM="" SESSION_ID=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --system)     SYSTEM="$2"; shift 2 ;;
+    --event)      EVENT="$2"; shift 2 ;;
+    --from)       FROM="$2"; shift 2 ;;
+    --to)         TO="$2"; shift 2 ;;
+    --outcome)    OUTCOME="$2"; shift 2 ;;
+    --form)       FORM="$2"; shift 2 ;;
+    --platform)   PLATFORM="$2"; shift 2 ;;
+    --session-id) SESSION_ID="$2"; shift 2 ;;
+    *) shift ;;
+  esac
+done
+
+[ -z "$SYSTEM" ] && { echo "boots-event: --system <slug> required" >&2; exit 2; }
+[ "${BOOTS_FUNNEL:-on}" = "off" ] && exit 0
+
+# Validate enums; fall back to safe values rather than writing garbage.
+case "$EVENT" in created|transition|shipped|retired|reopened) ;; *) EVENT="transition" ;; esac
+case "$OUTCOME" in advanced|blocked|abandoned) ;; *) OUTCOME="advanced" ;; esac
+
+# Sanitize free-ish fields for JSON safety (strip quotes/backslashes/control, cap).
+jsafe() { printf '%s' "$1" | tr -d '"\\\n\r\t' | cut -c1-64; }
+# The slug also indexes a path, so keep it to path-safe characters — no slashes,
+# no dots that could walk out of the systems dir.
+SYSTEM="$(printf '%s' "$SYSTEM" | tr -cd 'a-zA-Z0-9_-' | cut -c1-64)"
+[ -z "$SYSTEM" ] && { echo "boots-event: --system slug is empty after sanitizing" >&2; exit 2; }
+FROM="$(jsafe "$FROM")"; TO="$(jsafe "$TO")"
+FORM="$(jsafe "$FORM")"; SESSION_ID="$(jsafe "$SESSION_ID")"
+
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+
+# ─── Which AI host is this running on? ───────────────────────
+# The funnel is useless if every host reports as claude-code. `--platform` wins when
+# the caller knows; otherwise ask boots-platform, which both telemetry layers share
+# so the funnel and the run log can never disagree about the same session.
+[ -z "$PLATFORM" ] && PLATFORM="$("$BIN_DIR/boots-platform" 2>/dev/null || echo "claude-code")"
+PLATFORM="$(jsafe "$PLATFORM")"
+[ -z "$PLATFORM" ] && PLATFORM="claude-code"
+
+# ─── Don't record a move that names no move ──────────────────
+# A transition with both stages empty ("advanced from nothing to nothing") counts
+# in totals but is invisible to every stage rollup — worse than no row at all.
+# The record is the source of truth, so try to repair from it first.
+SYSTEM_FILE="$SYSTEMS_DIR/$SYSTEM/system.md"
+if [ "$EVENT" != "created" ] && [ -z "$TO" ] && [ -f "$SYSTEM_FILE" ]; then
+  TO="$(jsafe "$(grep -m1 -E '^stage:[[:space:]]*' "$SYSTEM_FILE" 2>/dev/null \
+        | sed -E 's/^stage:[[:space:]]*//' | tr -cd 'a-zA-Z0-9_-')")"
+fi
+if [ -z "$TO" ] && [ -z "$FROM" ]; then
+  echo "boots-event: no --to and no --from (and none on the record) — dropping this event rather than writing a stageless one" >&2
+  exit 0
+fi
+
+TS="$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || echo "")"
+EVENTS_FILE="$SYSTEMS_DIR/$SYSTEM/events.jsonl"
+mkdir -p "$SYSTEMS_DIR/$SYSTEM" 2>/dev/null || true
+
+# null-able JSON fields
+from_field="null"; [ -n "$FROM" ] && from_field="\"$FROM\""
+to_field="null";   [ -n "$TO" ]   && to_field="\"$TO\""
+form_field="null"; [ -n "$FORM" ] && form_field="\"$FORM\""
+
+printf '{"v":1,"ts":"%s","system":"%s","event":"%s","from_stage":%s,"to_stage":%s,"outcome":"%s","form":%s,"platform":"%s","session_id":"%s"}\n' \
+  "$TS" "$SYSTEM" "$EVENT" "$from_field" "$to_field" "$OUTCOME" "$form_field" "$PLATFORM" "$SESSION_ID" \
+  >> "$EVENTS_FILE" 2>/dev/null || true
+
+# Also append to the global funnel buffer — the outbound queue the telemetry sync
+# ships when the user has opted in. Full event so the community funnel can aggregate
+# where systems flow and stall. `_repo` is local-only (underscore = stripped before
+# any upload); the system slug is hashed at sync time — so nothing here names your
+# repo or your systems remotely. Doubles as the cross-repo "where's everything" index.
+_REPO_SLUG="$(basename "$REPO_ROOT" 2>/dev/null | tr -cd 'a-zA-Z0-9._-')"
+mkdir -p "$STATE_DIR/analytics" 2>/dev/null || true
+printf '{"v":1,"ts":"%s","event":"%s","system":"%s","from_stage":%s,"to_stage":%s,"outcome":"%s","form":%s,"platform":"%s","_repo":"%s"}\n' \
+  "$TS" "$EVENT" "$SYSTEM" "$from_field" "$to_field" "$OUTCOME" "$form_field" "$PLATFORM" "$(jsafe "$_REPO_SLUG")" \
+  >> "$STATE_DIR/analytics/funnel.jsonl" 2>/dev/null || true
+
+# Flush the outbound queue (backgrounded, rate-limited, tier-gated, no-op without
+# a backend). A funnel event is often the LAST thing a session does — without this
+# it would sit on disk until some later session happened to run a skill, which on a
+# short-lived host (a Cowork container that goes away) means never.
+SYNC_CMD="$BIN_DIR/boots-telemetry-sync"
+[ -x "$SYNC_CMD" ] && "$SYNC_CMD" >/dev/null 2>&1 &
+
+exit 0

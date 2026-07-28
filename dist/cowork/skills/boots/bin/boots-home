@@ -1,0 +1,130 @@
+#!/usr/bin/env bash
+# boots-home — resolve where the Boots home lives, and say which mode we're in.
+#
+# Only platforms whose home is RESOLVED per session need this (today: Cowork).
+# On a platform where the agent's disk is the user's disk, the home is just
+# ~/.boots and there is nothing to probe.
+#
+# Such a session runs in a sandbox that is wiped when the session ends, so the
+# Boots home cannot live in the sandbox. It lives in a folder on the user's own
+# computer, under `Boots/`. There are two ways a session reaches that folder, and
+# they need different tools:
+#
+#   local   — the folder is directly visible to this shell. True when the runtime
+#             runs on the user's computer, and when a connected folder is mounted
+#             into the session. Run bin scripts with the Bash tool.
+#   bridge  — the folder is only reachable through the device bridge. True for a
+#             cloud session talking to the desktop app. Run bin scripts with the
+#             device_bash tool, from the copy installed at <home>/.bin/.
+#   absent  — this shell cannot see a Boots home.
+#
+# ── READ THIS BEFORE ACTING ON `absent` ──────────────────────────────────────
+# `absent` from this script means "not visible from this shell". It does NOT mean
+# the user has no Boots home, and it is NEVER on its own a licence to create one.
+# This shell cannot see across the device bridge, so in a cloud session the user's
+# entire computer is invisible to it. The caller must still check the bridge and
+# the user's home-folder listing before concluding anything — see
+# reference/boots-home.md, steps 2 and 3.
+#
+# Creating a second home on top of a real one is the single worst failure mode in
+# Boots: the user's whole board disappears and the session cheerfully reports an
+# empty one as the truth. It has happened, more than once, to Boots' own author.
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# Output (one line per key, always; parse it, don't guess):
+#   BOOTS_MODE    local|bridge|absent
+#   BOOTS_HOME    <absolute path, or empty>
+#   BOOTS_BIN     <absolute path to the runnable bin dir, or empty>
+#   BOOTS_SYSTEMS <number of systems recorded in that home, or empty>
+#
+# BOOTS_SYSTEMS is the decoy check. A home that resolves with 0 systems for a user
+# who talks like they have work in flight is very likely the wrong folder, not an
+# empty one — say so and look again rather than reporting an empty board.
+#
+# Usage:
+#   boots-home              resolve and print
+#   boots-home --candidates print every folder that could host a home, one per line
+#
+# Env overrides:
+#   BOOTS_HOME       — skip the probe, use this path
+#   BOOTS_ROOTS      — colon-separated extra roots to probe
+set -uo pipefail
+
+MODE="absent"; HOME_DIR=""; BIN_DIR=""; N_SYS=""
+
+# Roots where a connected folder shows up, most-specific first. `/sessions/*/mnt`
+# is the desktop workspace mount; `/mnt/user-data/uploads` is where the bridge
+# stages files into a cloud container; the rest cover on-computer runs.
+default_roots() {
+  printf '%s\n' \
+    "/sessions"/*/mnt/* \
+    /mnt/user-data/uploads/* \
+    /mnt/user-data/outputs \
+    "$HOME"/Documents/* \
+    "$HOME"/Desktop/* \
+    "$HOME"/* \
+    2>/dev/null
+}
+
+roots() {
+  if [ -n "${BOOTS_ROOTS:-}" ]; then
+    printf '%s\n' "$BOOTS_ROOTS" | tr ':' '\n'
+  fi
+  default_roots
+}
+
+# --candidates: every existing directory that could host a Boots home.
+if [ "${1:-}" = "--candidates" ]; then
+  roots | while IFS= read -r r; do
+    [ -n "$r" ] && [ -d "$r" ] && printf '%s\n' "$r"
+  done | awk '!seen[$0]++'
+  exit 0
+fi
+
+# 1. Explicit override wins, and is trusted even if it does not exist yet
+#    (boots-setup is allowed to create it).
+if [ -n "${BOOTS_HOME:-}" ]; then
+  HOME_DIR="$BOOTS_HOME"
+  if [ -d "$HOME_DIR" ]; then MODE="local"; else MODE="absent"; fi
+fi
+
+# 2. Probe for an existing Boots/ under any candidate root.
+if [ -z "$HOME_DIR" ]; then
+  while IFS= read -r r; do
+    [ -n "$r" ] || continue
+    [ -d "$r" ] || continue
+    for name in Boots boots .boots; do
+      if [ -d "$r/$name/systems" ] || [ -f "$r/$name/map.md" ]; then
+        HOME_DIR="$r/$name"; MODE="local"; break 2
+      fi
+    done
+  done < <(roots)
+fi
+
+# 3. Resolve the runnable bin dir. Prefer the copy inside the home (it is the one
+#    device_bash can reach); fall back to this script's own directory.
+if [ -n "$HOME_DIR" ]; then
+  if [ -d "$HOME_DIR/.bin" ]; then
+    BIN_DIR="$HOME_DIR/.bin"
+  else
+    BIN_DIR="$(cd "$(dirname "$0")" && pwd -P)"
+  fi
+fi
+
+# A home we found but cannot write to is not usable as local.
+if [ "$MODE" = "local" ] && [ -n "$HOME_DIR" ] && [ -d "$HOME_DIR" ] && [ ! -w "$HOME_DIR" ]; then
+  MODE="bridge"
+fi
+
+# 4. Count the systems in whatever we resolved. This is the decoy signal — see
+#    the header. Only meaningful when the home actually exists.
+if [ -n "$HOME_DIR" ] && [ -d "$HOME_DIR" ]; then
+  N_SYS=$(find "$HOME_DIR/systems" -mindepth 2 -maxdepth 2 -name system.md 2>/dev/null | wc -l | tr -d ' ')
+  [ -z "$N_SYS" ] && N_SYS=0
+fi
+
+echo "BOOTS_MODE $MODE"
+echo "BOOTS_HOME $HOME_DIR"
+echo "BOOTS_BIN $BIN_DIR"
+echo "BOOTS_SYSTEMS $N_SYS"
+exit 0

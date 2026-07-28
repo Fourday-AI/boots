@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
+  "name": "fourday",
+  "description": "Plugins from Fourday AI.",
+  "owner": {
+    "name": "Fourday AI",
+    "url": "https://github.com/Fourday-AI"
+  },
+  "plugins": [
+    {
+      "name": "boots",
+      "source": "./dist/cowork",
+      "description": "A companion for building and finishing AI systems. Holds a model of every system you have in flight, always has the one next step, and closes what you start.",
+      "author": { "name": "Fourday AI" },
+      "homepage": "https://github.com/Fourday-AI/boots",
+      "repository": "https://github.com/Fourday-AI/boots",
+      "license": "MIT",
+      "category": "productivity",
+      "keywords": ["systems", "building", "pipeline", "coach", "continuity"],
+      "tags": ["systems", "pipeline", "continuity"]
+    }
+  ]
+}

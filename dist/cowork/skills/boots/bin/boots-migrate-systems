@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+# boots-migrate-systems — bring legacy per-repo ./state/systems/<slug>/ records into
+# the global Boots home (~/.boots/systems/), where systems now live.
+#
+# Lazy + repo-aware by design: old state lived per-repo, so there is no single place
+# to migrate from. The router calls this when it detects a ./state/systems/ in the
+# current repo and the user opts in — and again in the next repo, and the next.
+#
+# Non-destructive and idempotent:
+#   - COPIES, never moves — the source stays as a backup until the user removes it.
+#   - Skips any slug already present in the global home (reports it, never overwrites).
+#   - --dry-run reports what would move without touching anything.
+#
+# Usage:
+#   boots-migrate-systems [--from <dir>] [--dry-run]
+#     --from   the repo-local systems dir (default: ./state/systems)
+#
+# Env: BOOTS_HOME overrides ~/.boots (used by tests). Never exits non-zero on a
+# per-system failure — a bad copy leaves the source intact and moves on.
+set -uo pipefail
+
+STATE_DIR="${BOOTS_HOME:-$HOME/.boots}"
+DEST="$STATE_DIR/systems"
+FROM="state/systems"
+DRY=0
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --from)    FROM="$2"; shift 2 ;;
+    --dry-run) DRY=1; shift ;;
+    *) shift ;;
+  esac
+done
+
+[ -d "$FROM" ] || { echo "boots-migrate-systems: nothing at $FROM"; exit 0; }
+
+moved=0 conflict=0
+for d in "$FROM"/*/; do
+  [ -d "$d" ] || continue
+  slug="$(basename "$d")"
+  target="$DEST/$slug"
+  nfiles="$(find "$d" -type f 2>/dev/null | wc -l | tr -d ' ')"
+
+  if [ -e "$target" ]; then
+    echo "  conflict  $slug — already in ~/.boots/systems/, left both untouched"
+    conflict=$((conflict+1))
+    continue
+  fi
+
+  if [ "$DRY" -eq 1 ]; then
+    echo "  would migrate  $slug ($nfiles files)"
+    moved=$((moved+1))
+    continue
+  fi
+
+  mkdir -p "$DEST" 2>/dev/null || true
+  if cp -R "$d" "$target" 2>/dev/null; then
+    echo "  migrated  $slug ($nfiles files)"
+    moved=$((moved+1))
+  else
+    echo "  FAILED    $slug — copy error, source left intact" >&2
+  fi
+done
+
+echo
+if [ "$DRY" -eq 1 ]; then
+  echo "Dry run: $moved system(s) would move · $conflict already global. Nothing changed."
+else
+  echo "Migrated $moved system(s) into ~/.boots/systems/ · $conflict already there."
+  [ "$moved" -gt 0 ] && echo "Originals under $FROM are untouched — delete them once you've confirmed the move."
+fi
+exit 0

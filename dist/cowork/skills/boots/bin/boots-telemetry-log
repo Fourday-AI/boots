@@ -1,0 +1,119 @@
+#!/usr/bin/env bash
+# boots-telemetry-log — append an ops run event (Layer B) to ~/.boots/analytics/runs.jsonl,
+# and finalize any crashed session's stale .pending marker as outcome:unknown.
+#
+# Layer B is the "did the skill run / did it crash" log — distinct from the funnel
+# (Layer A, boots-event), which tracks systems moving through stages. Both share the
+# v:1 envelope, so boots-telemetry-sync ships them over one path.
+#
+# Crash detection: the preamble drops a .pending-<session> marker at skill start.
+# This script, on the NEXT run, finalizes any OTHER session's leftover marker as an
+# outcome:unknown event — so a session that died mid-run still shows up instead of
+# leaking a stale file.
+#
+# Usage:
+#   boots-telemetry-log --skill boots-ship --duration 142 --outcome success \
+#     --session-id "12345-1710000000"
+#
+# NEVER exits non-zero (set -uo pipefail, no -e): telemetry must not break a skill.
+#
+# Env overrides (for testing):
+#   BOOTS_HOME — override ~/.boots state dir
+set -uo pipefail
+
+STATE_DIR="${BOOTS_HOME:-$HOME/.boots}"
+ANALYTICS_DIR="$STATE_DIR/analytics"
+RUNS_FILE="$ANALYTICS_DIR/runs.jsonl"
+BIN_DIR="$(cd "$(dirname "$0")" && pwd)"
+CONFIG_CMD="$BIN_DIR/boots-config"
+
+SKILL="" DURATION="" OUTCOME="unknown" SESSION_ID="" EVENT_TYPE="skill_run"
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --skill)      SKILL="$2"; shift 2 ;;
+    --duration)   DURATION="$2"; shift 2 ;;
+    --outcome)    OUTCOME="$2"; shift 2 ;;
+    --session-id) SESSION_ID="$2"; shift 2 ;;
+    --event-type) EVENT_TYPE="$2"; shift 2 ;;
+    *) shift ;;
+  esac
+done
+
+TIER="$("$CONFIG_CMD" get telemetry 2>/dev/null || echo "off")"
+[ -z "$TIER" ] && TIER="off"
+
+# Telemetry off → clear our own pending marker and exit (no local write either).
+if [ "$TIER" = "off" ]; then
+  [ -n "$SESSION_ID" ] && rm -f "$ANALYTICS_DIR/.pending-$SESSION_ID" 2>/dev/null || true
+  exit 0
+fi
+
+mkdir -p "$ANALYTICS_DIR" 2>/dev/null || true
+
+jsafe() { printf '%s' "$1" | tr -d '"\\\n\r\t' | cut -c1-64; }
+OS="$(uname -s 2>/dev/null | tr '[:upper:]' '[:lower:]')"
+TS="$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || echo "")"
+# Which AI host — shared with the funnel via boots-platform so the two layers can
+# never disagree. `os` is NOT a substitute: linux-means-container is a guess that
+# breaks the moment a Linux user installs Boots normally.
+PLATFORM="$(jsafe "$("$BIN_DIR/boots-platform" 2>/dev/null || echo "claude-code")")"
+[ -z "$PLATFORM" ] && PLATFORM="claude-code"
+
+# ─── Finalize other sessions' stale pending markers (crash detection) ────
+# Each marker is {"skill":..,"ts":..,"session_id":..} written by the preamble.
+# Any marker NOT matching our session belongs to a run that never logged its
+# end — record it as outcome:unknown, then remove it.
+for pf in "$ANALYTICS_DIR"/.pending-*; do
+  [ -f "$pf" ] || continue
+  base="$(basename "$pf")"; sid="${base#.pending-}"
+  [ "$sid" = "$SESSION_ID" ] && continue   # our own, still in flight
+  p_skill="$(grep -o '"skill":"[^"]*"' "$pf" 2>/dev/null | head -1 | sed 's/"skill":"//;s/"//')"
+  p_ts="$(grep -o '"ts":"[^"]*"' "$pf" 2>/dev/null | head -1 | sed 's/"ts":"//;s/"//')"
+  # The crashed session's OWN platform, carried in the marker — not ours. A local
+  # run can finalize a container's abandoned marker, and attributing that crash to
+  # the laptop that happened to notice it would be a lie about where it happened.
+  # Markers written before platform existed have none: record unknown, don't guess.
+  p_plat="$(grep -o '"platform":"[^"]*"' "$pf" 2>/dev/null | head -1 | sed 's/"platform":"//;s/"//')"
+  printf '{"v":1,"ts":"%s","event":"skill_run","skill":"%s","outcome":"unknown","duration_s":null,"os":"%s","platform":"%s","session_id":"%s"}\n' \
+    "${p_ts:-$TS}" "$(jsafe "${p_skill:-unknown}")" "$OS" "$(jsafe "${p_plat:-unknown}")" "$(jsafe "$sid")" \
+    >> "$RUNS_FILE" 2>/dev/null || true
+  rm -f "$pf" 2>/dev/null || true
+done
+
+# Clear our own pending marker — we're about to log the real end event.
+[ -n "$SESSION_ID" ] && rm -f "$ANALYTICS_DIR/.pending-$SESSION_ID" 2>/dev/null || true
+
+# ─── Installation id (community tier only; random, NOT machine-derived, so it
+# can't be correlated by someone who knows your hostname/user) ──────────────
+INSTALL_FIELD="null"
+if [ "$TIER" = "community" ]; then
+  ID_FILE="$STATE_DIR/installation-id"
+  IID="$(cat "$ID_FILE" 2>/dev/null || true)"
+  if [ -z "$IID" ]; then
+    if command -v uuidgen >/dev/null 2>&1; then IID="$(uuidgen | tr '[:upper:]' '[:lower:]')"
+    elif [ -r /proc/sys/kernel/random/uuid ]; then IID="$(cat /proc/sys/kernel/random/uuid)"
+    else IID="$(od -An -tx1 -N16 /dev/urandom 2>/dev/null | tr -d ' \n')"; fi
+    [ -n "$IID" ] && printf '%s' "$IID" > "$ID_FILE" 2>/dev/null || true
+  fi
+  [ -n "$IID" ] && INSTALL_FIELD="\"$(jsafe "$IID")\""
+fi
+
+# ─── Log this run ────────────────────────────────────────────
+# Duration is wall-clock between the preamble and the epilogue, so an idle session
+# left open overnight reports as a 17-hour "run". Past this ceiling the number
+# measures the user's day, not the skill — record it as unknown rather than let it
+# poison every average. 2h is well beyond any real single-skill run.
+MAX_DURATION_S=7200
+dur_field="null"
+if [ -n "$DURATION" ] && [ "$DURATION" -ge 0 ] 2>/dev/null && [ "$DURATION" -le "$MAX_DURATION_S" ] 2>/dev/null; then
+  dur_field="$DURATION"
+fi
+printf '{"v":1,"ts":"%s","event":"%s","skill":"%s","outcome":"%s","duration_s":%s,"os":"%s","platform":"%s","session_id":"%s","installation_id":%s}\n' \
+  "$TS" "$(jsafe "$EVENT_TYPE")" "$(jsafe "$SKILL")" "$(jsafe "$OUTCOME")" "$dur_field" "$OS" "$PLATFORM" "$(jsafe "$SESSION_ID")" "$INSTALL_FIELD" \
+  >> "$RUNS_FILE" 2>/dev/null || true
+
+# ─── Trigger sync (backgrounded, fire-and-forget; a no-op without a backend) ──
+SYNC_CMD="$BIN_DIR/boots-telemetry-sync"
+[ -x "$SYNC_CMD" ] && "$SYNC_CMD" >/dev/null 2>&1 &
+
+exit 0

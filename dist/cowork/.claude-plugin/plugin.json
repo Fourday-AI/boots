@@ -1,0 +1,14 @@
+{
+  "name": "boots",
+  "description": "A companion for building and finishing AI systems in Cowork. Holds a model of every system you have in flight, always has the one next step, and closes what you start.",
+  "author": {
+    "name": "Fourday AI"
+  },
+  "keywords": [
+    "systems",
+    "building",
+    "pipeline",
+    "coach",
+    "continuity"
+  ]
+}

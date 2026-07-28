@@ -67,6 +67,12 @@ node_modules/
 !/.claude/
 /.claude/skills/
 
+# The plugin-marketplace catalog. This repo IS the marketplace users add with
+# `/plugin marketplace add Fourday-AI/boots`, and Claude Code looks for the
+# catalog at exactly this path. Without this line the deny-by-default /*/ rule
+# above hides it and the marketplace silently does not exist.
+!/.claude-plugin/
+
 # Local-clone runtime state — created when Boots runs in this dev repo in place.
 # The real per-user copies live under ~/.boots/; these top-level artifacts are
 # NOT part of the product and must never be committed. systems/ in particular
@@ -96,7 +102,17 @@ node_modules/
 # eval CASES under evals/cases/ are safe and ARE committed.
 /evals/transcripts/
 
-# Build output for plugin-packaged hosts (bun run build:cowork). Already covered
-# by the deny-by-default /*/ rule below — listed explicitly so it stays out even
-# if someone later relaxes that rule.
-/dist/
+# Build output for plugin-packaged hosts (bun run build:cowork). This is COMMITTED,
+# unlike most build output, because it is what users install: `.claude-plugin/
+# marketplace.json` points at ./dist/cowork, so pushing this directory IS the
+# release. Keeping it out of git is what let a hand-made Cowork snapshot drift for
+# weeks with nothing to diff it against. CI regenerates it and fails if what is
+# committed differs from what the templates produce, so it cannot go stale.
+#
+# Only the built hosts are allowed through — an unbuilt host directory appearing
+# under dist/ stays invisible, same as any other new top-level directory. The
+# `!/dist/` line is load-bearing: git cannot re-include a file whose parent
+# directory is excluded, and /*/ above excludes dist/ itself.
+!/dist/
+/dist/*
+!/dist/cowork/

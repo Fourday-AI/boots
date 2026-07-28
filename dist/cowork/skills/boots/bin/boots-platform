@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# boots-platform — print the AI host Boots is currently running on.
+#
+# Boots runs on more than Claude Code, and BOTH telemetry layers need to agree on
+# which host they're reporting: the funnel (boots-event) and the ops log
+# (boots-telemetry-log). Two copies of this logic would drift, and the drift would
+# be invisible — the funnel would say cowork while the run log said claude-code for
+# the same session. So it lives here once and both call it.
+#
+# Order of authority:
+#   1. BOOTS_PLATFORM        — explicit wins, always (also the escape hatch for a
+#                              host we can't detect yet, and how tests pin it).
+#   2. an rcw-<id> work tree — Claude Cowork gives each session a container whose
+#                              working tree is a remote-session folder.
+#   3. /mnt/user-data on Linux — where Cowork mounts the user's files. Last because
+#                              it's the loosest signal: a Linux box could in
+#                              principle have that path for other reasons.
+#   4. claude-code           — the fallback, and the overwhelmingly common case.
+#
+# These are heuristics read from inside the sandbox because Cowork exposes no host
+# marker of its own. If it ever does, add it as check 2 and let the rest rot.
+#
+# Prints exactly one lowercase token, never fails, never writes anything.
+set -uo pipefail
+
+if [ -n "${BOOTS_PLATFORM:-}" ]; then
+  printf '%s' "$BOOTS_PLATFORM" | tr -cd 'a-z0-9-' | cut -c1-32
+  exit 0
+fi
+
+_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd 2>/dev/null || echo)"
+case "$_ROOT" in *rcw-*) printf 'cowork'; exit 0 ;; esac
+case "$(pwd 2>/dev/null || echo)" in *rcw-*) printf 'cowork'; exit 0 ;; esac
+
+if [ -d /mnt/user-data ] && [ "$(uname -s 2>/dev/null)" = "Linux" ]; then
+  printf 'cowork'; exit 0
+fi
+
+printf 'claude-code'
+exit 0

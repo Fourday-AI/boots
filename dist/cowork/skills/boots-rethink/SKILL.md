@@ -1,0 +1,629 @@
+---
+name: boots-rethink
+description: >
+  Boots cross-cutting. Look across ALL of a user's systems at once and work out what
+  they add up to — the machine they are accidentally building — then propose the
+  redesign: merge two systems that are the same job, kill a duplicate, add the piece
+  that closes a loop, or reshape the lot. Performs the merge itself, creating the new
+  system the parents add up to with its ancestry recorded both ways. The only step
+  allowed to disagree with the plan and go backwards. Use when the user says
+  "boots-rethink", "what am I actually building", "how do these fit together", "am I
+  building the right things", "merge these two", "combine X and Y", "should these be
+  one system", or when the router sees the map has drifted from the systems.
+preamble-tier: 1
+---
+<!-- AUTO-GENERATED from SKILL.md.tmpl — do not edit directly -->
+<!-- Regenerate: bun run gen:skill-docs -->
+
+## Preamble (run first, then say nothing about it)
+
+Run the block below silently. It is invisible plumbing — do NOT narrate it, echo it, or mention telemetry, folders, or sessions to the user (this suite's rule 5: never narrate your plumbing). Surface something ONLY if the update check prints `UPGRADE_AVAILABLE` or `JUST_UPGRADED` (see "Updates" below), or if the home comes back `absent`. Otherwise go straight to this skill's own opening as if the preamble were not here — it never replaces or precedes the skill's first move in the conversation.
+
+**Step A — resolve the Boots home.** Everything else depends on it. Read `${CLAUDE_PLUGIN_ROOT}/skills/boots/reference/boots-home.md` for the full protocol. The short version is four steps. Take them in order and stop at the first hit.
+
+1. Run this with the **Bash** tool:
+
+   ```bash
+   bash "${CLAUDE_PLUGIN_ROOT}/skills/boots/bin/boots-home"
+   ```
+
+   If it prints `BOOTS_MODE local` with a path, that is the home. Run every Boots command in this skill with **Bash**.
+
+2. If it printed `absent`, **do not believe it yet** — and above all do not create a home. That script can only see this session's own sandbox, which is not the user's computer. Get the connected folder roots (`get_device_info`, or the session's own notice of which folders are connected) and call `device_list_dir` on each. If one holds a `Boots/` folder, that is the home, `<bin>` is `<home>/.bin`, and every Boots command runs with **device_bash**.
+
+3. **Still nothing? Ask before you build.** `get_device_info` also returns `homeDirectories` — a names-only listing of the user's home folder that needs no permission to read. Look through it for `.boots` and for any folder holding a `Boots`. If one is there, the user has a Boots home you simply have not been given access to yet: call `device_request_folder_access` on it (this works for hidden folders, and is one tap for them). **Skipping this step is the failure that matters** — it tells a user with years of work that they have none, and then offers to start them a second, empty one.
+
+4. Only if the bridge is unavailable, and no connected folder holds a `Boots/`, and nothing in `homeDirectories` looks like one, is the mode really `absent`.
+
+`BOOTS_MODE absent` → do not run Step B. Read `${CLAUDE_PLUGIN_ROOT}/skills/boots/reference/boots-home.md` and follow "First run".
+
+**Step B — the rest of the preamble.** Substitute the resolved `<home>` and `<bin>`, and run it with the tool Step A selected. **Every bash block in this skill is its own invocation and nothing carries between them** — no exported variable, no working directory. So substitute `<home>` and `<bin>` into every block that follows, and treat each one as if it were the first.
+
+```bash
+export BOOTS_HOME="<home>"
+_UPD=$(bash "<bin>/boots-update-check" 2>/dev/null || true)
+[ -n "$_UPD" ] && echo "$_UPD" || true
+mkdir -p "$BOOTS_HOME/analytics"
+_TEL=$(bash "<bin>/boots-config" get telemetry 2>/dev/null || echo "off")
+_TEL_PROMPTED=$([ -f "$BOOTS_HOME/.consent-prompted" ] && echo "yes" || echo "no")
+_PROACTIVE=$(bash "<bin>/boots-config" get proactive 2>/dev/null || echo "true")
+# A container hands out low PIDs, so PID + second collides with a session on the
+# user's own machine — and each would then finalize the other's marker as a crash.
+_SESSION_ID="$$-$(date +%s)-${RANDOM:-0}"
+echo "TELEMETRY: ${_TEL:-off}"
+echo "TEL_PROMPTED: $_TEL_PROMPTED"
+echo "PROACTIVE: $_PROACTIVE"
+echo "SESSION_ID: $_SESSION_ID"
+# Ops run-start marker (Layer B). A Cowork session can be reclaimed mid-run with
+# no chance to write an end event, so this marker is what lets the NEXT run
+# finalize a dead session as outcome:unknown instead of losing it. The platform is
+# stamped in because THIS host is the one that gets reclaimed — a later session on
+# the user's laptop must not report the crash as having happened there.
+if [ "$_TEL" != "off" ]; then
+  printf '{"skill":"boots-rethink","ts":"%s","session_id":"%s","platform":"cowork"}\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$_SESSION_ID" > "$BOOTS_HOME/analytics/.pending-$_SESSION_ID" 2>/dev/null || true
+fi
+# Ship anything a previous, reclaimed session left queued. On a host that is wiped
+# between sessions this is the only chance those events ever get: nothing else here
+# will notice them, and the sandbox that wrote them is already gone.
+[ "$_TEL" != "off" ] && bash "<bin>/boots-telemetry-sync" >/dev/null 2>&1 &
+```
+
+## Updates (act on the preamble output)
+
+If the preamble printed `UPGRADE_AVAILABLE <old> <new>`: mention it once, in one plain line — a newer Boots is available and they can install it the way they installed this one. Do not derail the session into an upgrade; they came here for their systems. If they are not interested, snooze it:
+
+```bash
+BOOTS_HOME="<home>"
+printf '%s 1 %s\n' "<new>" "$(date +%s)" > "$BOOTS_HOME/update-snoozed"
+```
+
+If it printed `JUST_UPGRADED <old> <new>`: say "Running Boots v{new} (just updated)" and continue.
+
+If `PROACTIVE` is `false`: don't proactively suggest other Boots skills this session.
+
+## Telemetry consent (ask once — the one thing here you may surface)
+
+Everything else in this preamble is silent plumbing. This is the exception: a single, one-time question. If `TEL_PROMPTED` is `yes`, skip it entirely. If `no`, ask once via AskUserQuestion, then always mark it prompted regardless of the answer.
+
+Ask it in one breath, in your own plain voice — not as a policy notice. It must say three things, or the person cannot answer it honestly: **what Boots does with them** (walks a system from idea to finished, one stage at a time), **what gets sent** (only the stage a system reached and when — "scoped", "built", "stalled at verify"), and **who sees it** (the people who build Boots, privately — it is not posted anywhere, and no other user ever sees your data). Say plainly that your code, your files, and the names of what you're building never leave your computer. Never use the word "community" as a label — to a new user it reads as *other users can see this*, which is false.
+
+Ask with AskUserQuestion, header `Share usage`, using these three options **verbatim** — the words are the point:
+
+- **"Share my progress" — the full picture; recommended.** Description: sends the stage each of your systems reaches, tied to one random ID so the maintainers can see a whole journey and where it broke. → `bash "<bin>/boots-config" set telemetry community`
+- **"Counts only"** — no ID, so they see totals but can't tell one person's run from another. → `bash "<bin>/boots-config" set telemetry anonymous`
+- **"Nothing"** — Boots sends nothing at all. → `bash "<bin>/boots-config" set telemetry off`
+
+Ask once and take the answer. Do not re-ask, re-frame, or push a second time if they decline — one question, then straight into their work. They can change it later with `boots-config set telemetry <tier>`; mention that only if they hesitate.
+
+Always, whatever they choose:
+```bash
+BOOTS_HOME="<home>"
+touch "$BOOTS_HOME/.consent-prompted" 2>/dev/null || true
+```
+
+Default is **off**, and nothing has anywhere to go until a `telemetry_url` is configured. Nothing is sent anywhere unless the user actively picks community or anonymous here.
+
+## Telemetry (run last)
+
+After the workflow completes, log the ops run event (Layer B). OUTCOME is success/error/abort. This writes only inside the Boots home; run it even in plan mode.
+
+```bash
+BOOTS_HOME="<home>" bash "<bin>/boots-telemetry-log" \
+  --skill "boots-rethink" --outcome "OUTCOME" --session-id "<the SESSION_ID Step B printed>" \
+  2>/dev/null || true
+```
+
+Replace `OUTCOME` before running.
+
+# Boots rethink (cross-cutting)
+
+Every other Boots skill takes ONE system and pushes it ONE step further. That means
+the biggest question Boots can normally ask is "what's the next step on this thing."
+It has no way to ask **"are these the right things at all, and what do they add up
+to?"** — so a user can assemble half a machine, one system at a time, and never be
+told what they are building.
+
+This skill is that missing move. It is the only one that:
+- takes **every** system as its subject, not one;
+- is allowed to go **backwards** (re-open a settled decision, merge, kill, restructure);
+- is allowed to **disagree with the user's own plan**.
+
+That last one is the point. A step that can only agree can only ever tell the user
+things they already know. Rethink earns its keep exactly when it says the
+uncomfortable thing — *"these two are the same system", "this one answers nothing",
+"the thing you actually want isn't any of these."*
+
+## The idea it runs on
+
+Boots keeps a **standing guess** about what the user is really building — one
+paragraph, written down, revised over time. It lives in `$BOOTS_HOME/map.md` (the map).
+Every run, you test that guess against what is actually in `$BOOTS_HOME/systems/`. When
+the guess and the systems disagree, that is the finding. When they agree, you say
+almost nothing.
+
+This is why it can help someone rethink something they didn't know they were doing:
+the guess is written from the systems, not from what the user said they wanted, so it
+can arrive at a description the user never gave. Someone who built a feedback reader,
+a tester finder, a session kit and a metric is building a build-measure-learn loop —
+whether or not they ever used those words.
+
+## When it runs
+
+Not every session. It has nothing new to say most days, and a step that speaks
+constantly gets ignored.
+
+Run it when:
+- the user asks (any of the trigger phrases above);
+- **a system ships** — a new finished thing is the moment the picture actually changed;
+- **a new system is created** — check it against the map while it is still cheap;
+- the router notices the map is stale (systems changed since `last read`) or has never
+  been written;
+- there are three or more systems and the map has never been tested against them.
+
+Cheap check, safe to run often. If nothing changed, you exit quiet.
+
+**Two ways in.** The full pass above is the default. But when the user names the
+parents themselves — *"merge these two"*, *"should X and Y be one system?"* — go
+straight to step 7 and do that merge. Read those systems and the map's `## proposals`
+list (a merge may already be sitting there accepted), skip steps 1–6, and don't make
+someone sit through a fleet read to get a move they have already decided they want.
+Same skill, narrower entry. Everything in step 7 still applies — above all the
+refusal: named parents are not consent, and "they asked for it" is not evidence the
+child is real.
+
+## What you do
+
+### 1. Read everything, purpose first
+
+```bash
+ls "$BOOTS_HOME"/systems/*/system.md 2>/dev/null
+cat "$BOOTS_HOME/map.md" 2>/dev/null
+```
+
+For each system read, in this order: `question:` (why it exists), `target:` (what
+done means), `status:`/`stage:`, `## scope` (in/out, integrations, inputs, relation
+to existing systems), and what is actually in its `output/`. **Read the `question:`
+first and let it frame the rest.** If you start from forms and integrations you will
+end up matching plumbing — "these two both read Gmail" — which produces true,
+shallow findings. Purpose is what makes the comparison worth anything.
+
+**Systems with no `question:` are the first thing to fix.** They predate this field
+or were tracked without one. Infer the likely question from the foundation and target,
+put it to the user in one line to confirm or correct, and write it into the file. You
+cannot do the rest of this well over systems whose purpose is unrecorded, and this is
+usually a two-minute job across the whole home.
+
+**Header fields wrap, so insert AFTER the last continuation line — not after the line
+that starts the field.** `target:` in particular usually runs to three or four lines,
+each continuation indented. Dropping `question:` in after the first line splits the
+value in half: `target:` is left reading as a truncated sentence and the remaining
+lines dangle, attached to nothing. Read to the end of the wrapped value first. Safest
+is to append `question:` as the **last** header field, immediately before the blank
+line preceding `## now`.
+
+### 2. Name the machine — before you look for gaps
+
+Write (or revise) the map's **"what you're building"** paragraph: what do these
+systems, together, appear to be for? Plain second person, no jargon, the user's own
+nouns. Say the shape out loud even when it sounds obvious — *"these four are all
+about finding out whether Boots works for people you've never met"* — because the
+user has never seen their systems described as one thing.
+
+Do this **before** hunting for gaps, in that order, always. A gap only means
+something relative to a purpose. Reverse the order and you will find plumbing
+mismatches and dress them up as insight.
+
+Then group every system under a question. A question can have several systems; a
+system serves exactly one. Anything that serves no question is an **orphan** — say so
+plainly. An orphan is not automatically waste (it might be finished work, or the
+user's actual job), but a system nobody can name a purpose for is the single best
+candidate for `boots-retire`.
+
+### 3. Test the guess
+
+Compare the new paragraph with the one already on the map.
+
+- **Same picture?** Nothing to announce. Update `last read` and go to step 4 quietly.
+- **Changed?** That is the headline, and it goes first, before any proposal: *"Last
+  time this looked like X. With the last two, it now looks more like Y."* A user
+  learning the shape of their own work has already got the value of this run, even if
+  every proposal below gets declined.
+
+### 4. Give the machine a home — it is a thing that can be built
+
+**This is the step that makes rethink constructive rather than an audit.** The
+paragraph you just wrote in step 2 is a *seed* — exactly the kind of raw sentence
+`boots-clarify` exists to turn into something buildable. Left in the map it is only a
+description. Put through clarify, the whole push becomes a system in its own right:
+one with a foundation, a scope made of the parts that are missing, and a next step.
+
+The user will almost never ask for this, because they have never thought of the
+overall push as a thing you could build — they think of it as the reason they are
+building other things. That is precisely why it is worth offering.
+
+**First: does a system already serve the whole push?** Usually one limb has quietly
+grown into it — the one whose question is the broadest, that the others feed. Check
+before you create anything. **If one exists, do NOT clarify a second** — that is the
+same duplicate mistake this skill exists to catch, and making it here would be
+indefensible. Instead propose that the existing system *absorb* the machine: its
+`question:` becomes the whole push's question, and the `missing:` lines you wrote
+against each question in step 2 become its scope. Hand it to `boots-scope` (or
+`boots-clarify` if its foundation no
+longer matches what it has become).
+
+**If instead two or more systems TOGETHER are the push and no single one has grown
+into it, that is a merge — step 7, and you perform it here rather than handing it
+anywhere.** This is the common case and it used to have nowhere to go: the finding was
+real, the move did not exist, and it went onto the map as an accepted proposal that
+nobody ever executed. Two of those sat unexecuted for a day before this step existed.
+An accepted proposal you cannot perform is a finding you have wasted.
+
+**If nothing serves the whole push,** offer `boots-clarify` and hand it the step-2
+paragraph verbatim as the seed. Say it plainly: *"the thing all four of these serve
+isn't written down anywhere as its own thing — want to make it one?"*
+
+**The guard that keeps this honest.** A parent system that only restates its children
+is a label, not a system. If the clarified scope comes out as "the things the other
+systems already do," it has no work of its own — say so and drop it. A real one has
+scope the limbs do not cover: the missing pieces, the thing that ties them together,
+the part nobody owns. If step 3 found no missing pieces, there is nothing here to
+build, and the machine stays a paragraph on the map. That is a fine outcome; say it
+and move on.
+
+**Order note:** this comes BEFORE the five checks deliberately. Run the checks first
+and you will always lead with a merge or a deletion — those are certain and cheap,
+while building the missing piece is speculative, so subtraction wins any ranking it is
+entered into. Giving the machine a home is the move most likely to leave the user with
+something they did not have, so it gets first look.
+
+### 5. Five checks, in this order
+
+Run these **within a question first** (systems serving the same purpose), then across
+questions. Order matters — the early ones can delete work the later ones would have
+tried to improve.
+
+1. **Overlap** — do two systems do the same job? Same question, or same source read
+   for the same purpose. The fix is a merge or a kill, not a shared file. This is
+   first because there is no sense wiring up a system that shouldn't exist.
+   **Same question, both doing real work → that is a merge: step 7, and you perform
+   it.** This check is where most merges are found, so do not stop at naming the
+   overlap — the finding is only worth something if it reaches the move. **One is a
+   strict superset of the other and the smaller adds nothing → that is a kill, not a
+   merge** (`boots-retire`); a shipped system plus a newer half-built rebuild of it is
+   the classic case, and the recommendation is almost always to fold the new intent
+   into the shipped one and retire the rebuild. The difference is step 7's own test:
+   if there is no work neither one covers, there is no child, and you are looking at a
+   duplicate rather than a combination.
+2. **Missing piece** — the question has no system for a part it obviously needs.
+   Read the question, list what answering it actually requires, and check each part
+   against the systems. The gap is the proposal.
+3. **Arrow** — one system's output is another's input, and nothing carries it.
+   Especially when a step happens by hand today, or when a hand-written note in a
+   file asks the user to remember to do something.
+4. **Verifier** — a system produces judgments nothing ever grades. Scores, rankings,
+   picks, predictions. If nothing checks whether they were right, it cannot improve
+   and neither can the user's confidence in it.
+5. **Loop** — results never change how the system runs next time. It repeats work,
+   re-surfaces what was already handled, or makes the same mistake twice. The fix is
+   usually a small memory file that one end writes and the other reads.
+
+**Ground every finding in a file.** Name the system, the field, the artifact. "Its
+`seen.csv` has a status column that is empty on every row" is a finding. "These could
+be better connected" is noise, and noise here is worse than silence — it teaches the
+user to skip this step.
+
+### 6. Propose — one to make, and at most one to remove
+
+**The point of this step is to leave the user with a better machine, not a tidier
+one.** Removing a redundant system is real value, but it is subtraction wearing the
+clothes of insight — and if you only ever subtract, a user finishes a rethink with
+less than they started with and nothing new to build. That is the failure mode this
+step is written against.
+
+So lead with **the constructive move**: the thing to build, connect, or give a home
+to. Then, only if you found one, **at most one removal**. Never open with the
+deletion, even when it is the most certain finding — certainty is not importance, and
+a merge is always more certain than a build because it needs no new work.
+
+If the only thing you have is a removal, say that plainly (*"nothing to add — but
+you're carrying a duplicate"*). Do not pad it with a speculative build to look
+balanced. One honest subtraction beats an invented addition.
+
+Keep it to those two. A list of six is a list nobody acts on, and it hides the one
+that mattered.
+
+Put each as a decision brief: `Do it now (recommended) / Not now / That's wrong,
+because…`. Take a "that's wrong" seriously — the user knows things the files don't,
+and a declined proposal is information, not a defeat. Record it either way.
+
+**Hand every accepted move to the skill that owns it. Rethink decides; it does not do
+the surgery itself — with exactly one written exception, the merge (step 7):**
+- systems to **combine** → **you do it, here, in step 7.** The one move rethink
+  performs. Not because doing beats handing off, but because deciding what the child
+  IS *is* the surgery: the same judgment that says "these two are one thing" writes
+  the child's question, and splitting it across two skills is what left the move
+  unbuilt. Every other move still hands off.
+- something to **make** → `boots-clarify` (a new push with no system yet),
+  `boots-scope` (an existing system absorbing new work), or `boots-build` (a concrete
+  piece whose shape is already obvious — a memory file, a handoff, a grading column)
+- something to **drop** → `boots-retire`
+- a system whose **shape changed** → `boots-clarify` or `boots-scope`
+- a loose thread worth **tracking** → `boots-track`
+
+`boots-build` is on that list deliberately. Some findings — "nothing writes the result
+back", "this column is never filled" — are a small concrete artifact, not a new
+system, and routing them through clarify+scope is ceremony that kills them. If you can
+name the file and what goes in it, go straight to build.
+
+### 7. Perform the merge — create the system the parents add up to
+
+**This is the one move you perform rather than hand off.** Reached two ways: an
+accepted combine from step 6, or the user naming the parents on the way in.
+
+The output is a NEW system that records where it came from — not one parent
+swallowing another. Absorbing loses the history into whichever parent happened to be
+bigger, and the point of this move is that a user can look at a system and see how it
+got there.
+
+**a. Read the parents properly, and read the working tree, not just the record.**
+Each parent's `question:`, `target:`, `## scope` (both the in and the out lists — an
+`out:` line is often where the child's work is hiding), `## log`, and artifacts. Then
+go and look at what actually exists on disk. A record written a week ago describes a
+system that may have been half-built since, and proposing surgery on stale evidence is
+the most embarrassing thing this skill can do. It has already happened once: a
+proposal to cut a system down was withdrawn mid-session because a parallel session had
+built the thing hours earlier. Check before you cut.
+
+**b. Draft the child from the work NEITHER parent covers — then put it to the user
+to correct.** Not the sum of the parents. The gap between them: what falls between the
+two, what each one's `out:` list pushed away, what the pair makes possible that
+neither could alone. Write the child's `question:` (why it exists) and a first `## scope`
+from that gap, show it, and take the correction. You are drafting, not deciding.
+
+**c. REFUSE when the child would only restate its parents. This is a real branch, not
+a footnote.** The test is concrete: **does the child's scope contain work that no
+parent covers?** If you cannot name that work in a sentence pointing at a file, a
+missing decision, or a gap in a scope's `out:` list, there is no child — say so
+plainly and stop:
+
+> *"I don't think these two should merge. They read the same folder, but they answer
+> different questions, and everything the combined one would do, one of them already
+> does. You'd get a new name and no new work."*
+
+Two systems sharing plumbing is not a merge; **only a shared question is.** "Both read
+Gmail" is the shallowest possible reason to combine two things and the one that will
+tempt you most often.
+
+**Test ONLY the child here. How mature the parents are is step 7g's question, not
+this one.** "They're nearly finished", "this one's about to ship", "reopening that
+would cost a week" — every one of those is an argument about what happens to a
+*parent*, and none of them is evidence about whether the *child* has work of its own.
+Answer them in 7g, where the honest answer is often that both parents **keep running**
+and nothing gets reopened at all. Refusing here on parent maturity is the most likely
+way to get this step wrong, because the objection feels like caution and reads like
+rigour — and it kills a real child to solve a problem 7g was going to solve anyway.
+Observed live: a session refused a genuine merge on exactly this confusion.
+
+And when the user named the parents themselves, the refusal gets
+*harder*, not softer — being asked for a merge is not evidence one exists, and a step
+that always says yes to a named pair is a step nobody can trust to say no. Refusing a
+merge the user asked for is this step working, not failing.
+
+**d. Name the child for the promise it makes, not the mechanism it uses.** The name is
+what the user sees on the board and types, so it is a taste-point: offer your pick and
+one alternative, in one line, and let them choose. Prefer the name that survives the
+implementation changing — a name built from today's mechanism goes stale the day the
+mechanism does.
+
+**e. Show the plan and get a yes BEFORE you write anything. These writes cannot be
+undone.**
+
+This is the only step in Boots that changes several of the user's system records at
+once, and `$BOOTS_HOME/systems` is not version-controlled — there is no `git checkout` to
+put it back. Never discover that mid-merge. Say it plainly, list every file you are
+about to touch, and wait:
+
+> *"Here's what I'll do: create `<child>`, add a line to `<parent-a>` and `<parent-b>`
+> pointing at it, and update the map. That's four files. Your system records aren't
+> version-controlled, so I can't undo it afterwards — want me to copy them somewhere
+> safe first?"*
+
+Offer the copy; don't take it silently and don't skip the offer because the merge
+looks obvious. A user who says "no, go ahead" has made a decision; a user who was
+never asked has had one made for them.
+
+**Write in this order, always: child first, then the parents, then the map.** If
+something interrupts you partway, a child nobody points at yet is inert and easy to
+finish or delete, while parents pointing at a child that does not exist is a broken
+fleet the router will trip over. Order the damage.
+
+**f. Create the child as a COMPLETE system record — a whole one, not a stub.**
+
+```bash
+mkdir -p "$BOOTS_HOME"/systems/<child-slug>
+```
+
+Write it in **exactly the shape `boots-clarify` writes** — read that skill's "Write to
+the system file" block and follow it, rather than working from a list here. Every field
+and every section it names, including the `## now` pickup block: the router reads
+`## now` to tell the user their next step, so a child without one is a system the board
+cannot see. Do not hand-roll a shorter version of that skeleton, and do not let this
+step keep its own copy of the field list — one of the two will drift, and the drifting
+one will be this step, because merges are rarer than clarifies.
+
+Three things differ from a clarified system, and only three:
+
+```
+born_from: <parent-slug>, <parent-slug>
+```
+
+`status: clarified`, `stage: scope` — it arrives with a real foundation, and a better
+one than most systems start with, because the parents' evidence IS its foundation. But
+its scope was drafted from their gaps and has not been cut by anyone. Do NOT create it
+further along because its parents were nearly finished: the child is new work and
+inherits none of their progress.
+
+And its `## foundation` is written from the merge — what the parents were each for,
+what fell between them, and what the pair makes possible. That paragraph is the thing
+a reader will use in six months to understand why this system exists.
+
+**Then write ancestry back onto EACH parent:**
+
+```
+evolved_into: <child-slug>
+```
+
+and add a line to that parent's `## log` saying what happened and why — *"merged into
+`<child>`: the install path is one question, not two"*. `evolved_into:` records where
+it went; the log records why, and the why is what someone actually needs later. A field
+without its reason is how a merge becomes folklore.
+
+Both directions, deliberately. Two writes and two chances to drift, but a parent that
+does not point forward is how the same merge gets proposed a second time as if it were
+new — and re-proposing a merge that already happened is exactly the failure this whole
+move exists to end. Do both writes in the same pass, never one and then the other
+later.
+
+**g. Settle each parent's fate WITH the user — one at a time, and it is a call, not a
+rule.** Three outcomes, and which one applies is specific to that parent:
+- **Keeps running** — it has a job of its own that survives the merge. A system that
+  serves the child while still doing its own daily work stays alive.
+- **Becomes a limb** — it keeps existing but stops owning its question; the child owns
+  it now.
+- **Retires** — the child answers its question outright and nothing is left.
+
+Do not batch these into one question. The interesting merges are the ones where the
+parents get different answers, and asking "shall I retire both?" hides that. A parent
+carrying an unresolved hazard that has nothing to do with the merge — a known bug, a
+dangerous edge case — **keeps running**; folding it into a bigger system is how a live
+hazard becomes invisible.
+
+**You decide the fate here; you do not perform the retirement.** Hand any parent
+marked retire to `boots-retire`, which owns that and emits its own event. The
+exception in step 6 is narrow on purpose: you create the child and write the ancestry,
+because that is inseparable from the judgment. Everything else still hands off.
+
+**h. Update the map.** The child's question goes into `## questions in play`; the
+parents' new state is recorded against it. If an accepted proposal produced this
+merge, mark it done with the date and the child's slug — an accepted proposal that
+stays open forever is indistinguishable from one nobody acted on.
+
+**i. Record the child entering the pipeline** (silent, this suite's rule 5):
+
+```bash
+<bin>/boots-event --system "<child-slug>" --event created --to scope 2>/dev/null || true
+```
+
+### 8. Say nothing when there is nothing
+
+**"Nothing new — this still looks like one push at X, and every part of it has an
+owner"** is a complete and good answer. Do not manufacture a finding to justify the
+run. The credibility of this step is the only thing that makes the user read it, and
+one invented insight costs more than ten quiet runs.
+
+**But quiet is for when you found nothing — not for when you found something and
+didn't fancy raising it.** If you can name a gap concretely enough to write it in the
+proposals list, it is concrete enough to put to the user. "Worth doing later, once X
+happens" is a proposal with a trigger, and it belongs in a decision brief where the
+user can accept, decline, or defer it — not filed silently as something you noticed.
+Parking a real finding is the timid failure, and it is just as costly as noise: the
+run produces a tidy record and changes nothing about what the user does next.
+
+## The map
+
+`$BOOTS_HOME/map.md` — one per user, above the systems, because a question outlives any
+single system that serves it. Create it from this shape on first run:
+
+```markdown
+# The map
+
+Boots' standing answer to what you're actually building. A guess, held openly,
+rewritten whenever the systems disagree with it.
+
+last read: <date>
+
+## what you're building
+<one paragraph, plain, second person — the machine these systems add up to>
+
+## questions in play
+
+### <the question, one line — what needs finding out, or the decision it feeds>
+serves: <slug>, <slug>
+believed: <what you currently think the answer is, and how confident>
+missing: <the part of this question nothing answers yet — or "nothing obvious">
+
+## orphans
+- <slug> — <why nothing here explains its purpose>
+
+## proposals
+- <date> <machine|overlap|missing|arrow|verifier|loop> — <one line> — <status>
+```
+
+**`<status>` is one of exactly four**, and no others: `proposed` (put to the user,
+awaiting an answer), `accepted: <date>`, `declined: <reason>`, or
+`deferred until <the concrete trigger>`. Nothing else.
+
+**"noted" is not a status.** A finding recorded but never put to the user is the
+timid failure in written form — it makes the map look thorough while the user never
+got a decision to make. If you genuinely think a finding should wait, that is
+`deferred until <trigger>`, the trigger is a real observable event ("after the first
+three sessions are run", not "later"), and **you still say it out loud** so the user
+can overrule you. A deferral is a decision you propose, not one you take alone.
+
+**Keep the declined ones.** A proposal the user rejected must not come back next run
+as if it were new; read this list before you propose anything and do not re-raise a
+declined item unless something material changed — and if you do, say what changed.
+This is the same discipline a good scanner uses to avoid re-surfacing what was already
+dismissed, and without it this skill becomes a nag.
+
+**Answered questions stay, marked answered, with what the answer was.** That record is
+how the user sees they actually learned something, and it stops the same question
+being re-opened in a new disguise.
+
+## How this talks
+
+Follow all the rules in `boots/SKILL.md` — "How Boots talks". This step has two of its
+own on top:
+
+- **Never say "your systems form a directed graph"** or anything in that register.
+  Say what the systems are for, in the user's nouns. The five checks are your internal
+  method; the user hears "you've got two things doing the same job" and "nothing tells
+  the second one what the first one found."
+- **Say the hard thing plainly, once, without softening it into vagueness.** "These
+  two are the same system and one should go" is kind. "There may be some overlap worth
+  exploring" wastes everyone's time and gets ignored. Then stop — state it, put the
+  decision, and take the answer.
+
+## Keep getting better at this
+
+When a run teaches you something, write it back into this file so the skill does it
+next time rather than the person running it. Two kinds, and they go to different
+places:
+
+- **A judgment correction** — the user overruled a call you made ("those two aren't
+  the same job", "that child is just a label", "don't retire that one, it still has
+  its own work") → sharpen the rule in the step that made the call, in the user's own
+  words, with the real case as the example. The merges you get wrong are the spec for
+  step 7.
+- **A how-you-operate correction** — the user corrected your method, not your verdict
+  ("you proposed surgery without looking at the working tree", "don't batch the parent
+  decisions into one question") → add it as an instruction in the relevant step.
+
+Both go in this file. A lesson that lives only in a session log is a lesson the next
+run does not have.
+
+## Hand off
+
+Close by naming what you now think they are building, in one sentence, then the one
+move. If a proposal was accepted, invoke the skill that owns it. If nothing was found,
+say so and point at whatever the router had queued next — do not leave the user in a
+step that had no output.
+
+**No funnel event of its own, except the merge.** Rethink does not move a system
+through a stage, so it records nothing in the funnel — the skill it hands off to
+(`boots-retire`, `boots-track`, `boots-scope`) emits the transition it actually
+causes. The one exception matches the one exception in step 6: a merge *creates* a
+system, so step 7 emits that system's `created` event, because no other skill will.
+Retiring a parent still belongs to `boots-retire` and its event is emitted there. The
+map's `## proposals` list is this step's memory; the funnel stays a clean picture of
+systems moving through the pipeline.
