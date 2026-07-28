@@ -1,9 +1,9 @@
 # Contributing to Boots
 
-Thanks for being here. Boots is a suite of Claude Code **skills** — prose that tells an
-agent how to behave. There's no server, no runtime, no build output. That makes it
-unusually easy to contribute to and unusually easy to break in subtle ways, so this
-guide is mostly about the few rules that aren't obvious.
+Thanks for being here. Boots is a suite of **skills** — prose that tells an agent how to
+behave — running today on Claude Code and Claude Cowork. There's no server and no runtime.
+That makes it unusually easy to contribute to and unusually easy to break in subtle ways,
+so this guide is mostly about the few rules that aren't obvious.
 
 ## Get set up
 
@@ -50,6 +50,31 @@ runs the same check, so a stale file fails the PR either way — the hook just t
 sooner. (It no-ops if you don't have bun, so a bun-less contributor can still commit;
 they just can't regenerate.)
 
+### The second rule: rebuild the published bundle
+
+`dist/cowork/` is **committed build output**, which is unusual and deliberate: it is the
+plugin Cowork users actually install. `.claude-plugin/marketplace.json` points at it, so
+**pushing to `main` is the release** — there is no separate publish step to catch a
+mistake later.
+
+So if you change anything the bundle carries — a `.tmpl`, a `boots/forms/` palette, a
+`boots/bin/` script, a `boots/reference/` doc — rebuild and commit `dist/` in the same
+commit:
+
+```bash
+bun run build:cowork        # regenerate the plugin bundle
+bun run check:marketplace   # validate the catalog users install from
+```
+
+The pre-commit hook and CI both rebuild and fail if what's committed differs, so you
+can't ship a stale bundle by accident — but knowing why saves you a confusing rejection.
+
+One thing that looks like an oversight and isn't: **the bundle carries no `version`, on
+purpose.** Claude Code falls back to the git commit SHA, which makes every push a new
+version that reaches installed copies automatically. Adding a version string would *pin*
+the plugin and silently stop users receiving updates, so both build scripts treat a
+present version as an error.
+
 ## How the repo is laid out
 
 ```
@@ -63,6 +88,8 @@ hosts/              per-AI-tool config (see below)
 scripts/            the template engine + the test suite
 supabase/           optional telemetry backend, off by default
 docs/               design notes
+.claude-plugin/     marketplace.json — the catalog users install Boots from
+dist/cowork/        the built plugin, committed because it IS what users install
 ```
 
 `CLAUDE.md` has the fuller map and is worth reading before a substantial change.

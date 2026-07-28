@@ -74,6 +74,11 @@ boots/
 │       ├── preamble.ts     #     {{PREAMBLE}} — the universal block injected into every skill
 │       ├── funnel.ts       #     {{FUNNEL_EMIT}} / {{FUNNEL_ROLLUP}} — Layer A telemetry hooks
 │       └── types.ts        #     TemplateContext + HOST_PATHS (path seam, defined once)
+├── .claude-plugin/         # PUBLISH SEAM: marketplace.json — the catalog Claude Code
+│                           #   reads for `/plugin marketplace add Fourday-AI/boots`.
+│                           #   Points at ./dist/cowork. Validated by check:marketplace.
+├── dist/cowork/            # COMMITTED build output — the plugin users actually install.
+│                           #   Regenerate with `bun run build:cowork`; never hand-edit.
 ├── migrations/             # v<version>.sh — idempotent on-disk migrations (none yet; README only)
 ├── supabase/               # optional telemetry backend (functions + migrations); off by default
 ├── docs/                   # design docs (systems-home-global, first-run-experience, ...)
@@ -220,6 +225,36 @@ Shell scripts the preamble and stages call silently. Global state lives under `~
 `setup` and `boots-upgrade` when upgrading across the version in `VERSION`. See
 `migrations/README.md`. None exist yet (`schema_version` is 1) — the systems-home move
 is handled by `boots-migrate-systems`, not a numbered migration.
+
+## Publishing: this repo is its own plugin marketplace
+
+Claude Code installs Boots by cloning (see below). **Cowork installs it as a plugin**, and
+this repo is the marketplace it installs from — a user adds
+`https://github.com/Fourday-AI/boots` and gets `boots@fourday`. Three facts make that work,
+and each one inverts a normal convention, so none of them are safe to "clean up":
+
+- **`dist/cowork/` is committed.** It is not incidental build output, it is the artifact
+  users install — `.claude-plugin/marketplace.json` points at it, so **`git push` is the
+  release**. Keeping it out of git is exactly what let a hand-made Cowork snapshot drift
+  for weeks with nothing to diff it against. `.gitignore` allows `dist/cowork/` through
+  and nothing else under `dist/`; the `!/dist/` line before `/dist/*` is load-bearing
+  (git cannot re-include a file whose parent directory is excluded, and `/*/` excludes
+  `dist/`).
+- **Neither `plugin.json` nor the marketplace entry carries a `version`, on purpose.**
+  Claude Code resolves a plugin's version from `plugin.json` → the marketplace entry →
+  the **git commit SHA**, and skips the update when the resolved version matches what a
+  user already has. A version string therefore *pins* the plugin: every fix pushed after
+  a user's first install would be invisible until somebody remembered to bump `VERSION`.
+  Omitting it makes every commit a new version, so users cannot silently fall behind.
+  Both build-plugin.ts and check-marketplace.ts treat a *present* version as the error.
+- **Freshness is gated, not trusted.** CI and `.githooks/pre-commit` both rebuild the
+  bundle and fail if the committed one differs (`bun run build:cowork` then
+  `git diff -- dist/`), plus `bun run check:marketplace` on the catalog. Editing a
+  `.tmpl`, a `forms/` palette, a `bin/` script or `reference/` doc means rebuilding and
+  committing `dist/` in the same commit — the same discipline as `.tmpl` → `SKILL.md`.
+
+`VERSION` still ships inside the bundle so an install can say which release it came from.
+It is informational; it is not the update key.
 
 ## Install / upgrade
 

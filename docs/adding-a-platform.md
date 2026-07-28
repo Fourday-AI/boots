@@ -86,6 +86,31 @@ bun run scripts/build-plugin.ts --host <name>   # if packaging is 'plugin'
 bash scripts/test-platform.sh                   # the invariants below
 ```
 
+### 5. Publish it — only for `packaging: 'plugin'`
+
+A built bundle reaches nobody until it is listed. This repo is its own plugin
+marketplace: `.claude-plugin/marketplace.json` is the catalog users add with
+`/plugin marketplace add Fourday-AI/boots`. Add one entry per plugin-packaged host:
+
+```json
+{ "name": "boots", "source": "./dist/<name>", "description": "…" }
+```
+
+Then commit `dist/<name>/` — it is build output that is **deliberately committed**,
+because it is the artifact users install, which makes `git push` the release. Add the
+directory to the `.gitignore` allow-list next to `!/dist/cowork/`; note that `!/dist/`
+must come first, since git cannot re-include a file whose parent directory is excluded.
+
+**Do not give the entry a `version`, and do not let the manifest carry one.** Claude
+Code resolves a plugin's version from `plugin.json` → the marketplace entry → the git
+commit SHA, and skips the update when it matches what a user already has. A version
+string pins the plugin, so every later fix becomes invisible until someone bumps it.
+Omitting it makes each commit a new version. `bun run check:marketplace` enforces this,
+along with the catalog's shape — run it before pushing.
+
+A symlink-packaged host has none of this: `./setup` installs it and `git pull` upgrades
+it.
+
 ## The placeholders a skill body may use
 
 This is the whole platform vocabulary. There are deliberately few of them, and

@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/banner.png" alt="Boots — finish what you start. A build-and-close pipeline for Claude Code." width="720" />
+  <img src="docs/assets/banner.png" alt="Boots — finish what you start. A build-and-close pipeline for Claude Code and Claude Cowork." width="720" />
 </p>
 
 <p align="center">
@@ -14,19 +14,22 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT License" /></a>
   <a href="https://github.com/Fourday-AI/boots/stargazers"><img src="https://img.shields.io/github/stars/Fourday-AI/boots?style=flat" alt="Stars" /></a>
   <img src="https://img.shields.io/badge/built%20for-Claude%20Code-000" alt="Claude Code" />
+  <img src="https://img.shields.io/badge/and-Claude%20Cowork-000" alt="Claude Cowork" />
 </p>
 
 <br/>
 
 # Boots is the companion that helps you *finish* AI systems.
 
-A build-and-close pipeline for Claude Code.
+A build-and-close pipeline for Claude Code and Claude Cowork.
 
 I kept starting AI systems and never finishing them. A skill half-built in one chat, an idea clarified in another, a tool that "worked" only because I remembered its tricks — all scattered across sessions I'd never reopen. Every toolkit I tried helped me *start* faster, which just gave me more half-built things. So I built the part that was missing: the one that closes. Boots is what I use to make finishing the default.
 
-**If Claude Code is the _builder_, Boots is the _finisher_.**
+**If your AI tool is the _builder_, Boots is the _finisher_.**
 
-Boots is a suite of Claude Code skills that keeps track of every AI system you have going, tells you the one next step, and walks each one from a fuzzy idea all the way to a finished, usable tool. Bring a half-formed ambition; Boots works out where you actually left off, in your own words, and moves it forward one concrete step at a time.
+Boots is a suite of skills that keeps track of every AI system you have going, tells you the one next step, and walks each one from a fuzzy idea all the way to a finished, usable tool. Bring a half-formed ambition; Boots works out where you actually left off, in your own words, and moves it forward one concrete step at a time.
+
+It runs on **Claude Code** and **Claude Cowork**, and builds whatever that tool can build — the shapes on offer differ between the two, and Boots knows which ones you have.
 
 Every builder toolkit helps you _start_. Boots also **closes** — review it, prove it works, and ship it are real steps, because a system isn't done until it's actually shipped.
 
@@ -118,7 +121,7 @@ You said "grade editors." Six commands later you have a taste-first talent scout
 
 - ✅ You **start more AI systems than you finish** and lose track of the half-built ones
 - ✅ You want a companion that **remembers where every system stands** and always has the next step
-- ✅ You build with **Claude Code** and want everything it can build — skills, agents, automations, scripts — treated as real work, not just loose files
+- ✅ You build with **Claude Code** or **Claude Cowork** and want everything it can build — skills, agents, automations, scheduled jobs, connectors, scripts — treated as real work, not just loose files
 - ✅ You want the **closing** work — review it, prove it works, ship it — to be a real process, not a vibe
 - ✅ You want a pickup to **feel like the last chat never closed** — your situation in your own words, not a stage name
 - ✅ You want Boots to **dig through your old chats, notes, and to-do lists** for work worth building
@@ -248,7 +251,7 @@ It's the one part of Boots allowed to disagree with your plan.
 </td>
 <td>
 
-**`build`** — Makes the scoped slice in the chosen form, in the right place for Claude Code to find it. Produces the thing the closer then reviews, proves out, and ships.
+**`build`** — Makes the scoped slice in the chosen form, in the right place for your tool to find it. Produces the thing the closer then reviews, proves out, and ships.
 
 </td>
 </tr>
@@ -272,7 +275,7 @@ It's the one part of Boots allowed to disagree with your plan.
 </td>
 <td>
 
-**`prospect`** — The feeder. Digs through Claude Code's memory, your past chats, a loose-ends list, to-do notes in your projects, and other AI tools for work worth doing, then ranks it.
+**`prospect`** — The feeder. Digs through your agent's memory, your past chats, a loose-ends list, to-do notes in your projects, and other AI tools for work worth doing, then ranks it.
 
 </td>
 </tr>
@@ -322,11 +325,17 @@ It's the one part of Boots allowed to disagree with your plan.
 - **Not just a chatbot.** Yes, you talk to it — but it isn't a blank chat window you have to steer. Boots keeps track of every system you're building and drives each one to finished.
 - **Not a task manager.** Tasks are a side effect. Boots tracks systems, what each one is, and whether it's actually shipped.
 - **Not a workflow builder.** No drag-and-drop pipelines. The pipeline is a fixed set of steps that each do real, different work.
-- **Not tied to one project.** Boots works in any project and builds anything Claude Code can. What it builds follows the work.
+- **Not tied to one project, or one tool.** Boots works in any project and builds anything your AI tool can. What it builds follows the work.
 
 <br/>
 
 ## Install — one paste
+
+Boots runs on **Claude Code** and on **Claude Cowork**. The two install differently: Claude Code clones the repo, Cowork adds it as a plugin marketplace. Pick your tool.
+
+<details open>
+<summary><b>Claude Code</b> — clone and symlink</summary>
+<br/>
 
 Boots is a set of Claude Code skills. There's no build step, no server, no account — you install the skills and wire them into `CLAUDE.md` so the agent knows they exist.
 
@@ -349,6 +358,31 @@ Boots clones straight into your Claude Code skills directory, so the download *i
 
 > Your work is kept somewhere else. `~/.boots/` holds your systems, notes and config; the clone above is only the program. Deleting or re-cloning the repo never touches them.
 
+</details>
+
+<details>
+<summary><b>Claude Cowork</b> — add the marketplace</summary>
+<br/>
+
+In Cowork, Boots installs as a plugin. Open **Settings → Plugins → Add marketplace → Add from a repository**, and paste:
+
+```
+https://github.com/Fourday-AI/boots
+```
+
+Then install **boots** from the `fourday` marketplace. From a Claude Code terminal the same thing is two commands:
+
+```bash
+/plugin marketplace add Fourday-AI/boots
+/plugin install boots@fourday
+```
+
+**Upgrading is automatic.** Boots is published straight from `main`, so every fix we push becomes the next version — there's no release to wait for and no version to bump. Cowork refreshes marketplaces in the background; to pull changes immediately, run `/plugin marketplace update fourday`. (This is why you won't find a `boots-upgrade` skill here: on Cowork, updating is the marketplace's job, not yours.)
+
+> **One prerequisite, and it matters.** A Cowork session runs in a sandbox that is **wiped when the session ends**. Boots' whole promise is that your board is still there next week, so it needs somewhere durable to keep it — **connect a folder** before your first run, and Boots will put its home there and tell you which folder it chose. Without one, Boots still works for a single session, but nothing survives it. If you're not sure, just say `boots` and it will walk you through it.
+
+</details>
+
 ### Try it in five minutes
 
 1. Install (above).
@@ -362,10 +396,19 @@ Boots clones straight into your Claude Code skills directory, so the download *i
 ## FAQ
 
 **What is a "system" in Boots?**
-Anything you build with Claude Code — a skill, an agent, an automation, a slash command, a connector to another tool, a script, or a piece of reference it reads — or a small mix of these. (In Claude Code's own terms: skills, subagents, slash commands, hooks, MCP servers, Agent SDK apps, scripts, and durable context.) Boots picks which one from what the job needs.
+Anything your AI tool can build — a skill, an agent, an automation, a connector to another app, a script, or a piece of reference it reads — or a small mix of these. Boots picks which one from what the job needs.
+
+The exact menu depends on the tool you're in, and Boots reads the right one rather than assuming:
+
+- **Claude Code:** skills, subagents, slash commands, hooks, MCP servers, Agent SDK apps, scripts, and durable context.
+- **Claude Cowork:** skills, **scheduled tasks** (a job that runs on a clock, unattended), **connectors**, **deliverables** (a real `.docx`/`.xlsx`/`.pptx` you open), **artifacts** (a page that stays in your sidebar), plugins, subagents, workflows, and durable context.
+
+That difference is not cosmetic. If what you want is "every Monday morning, without me remembering", that's a scheduled task — a shape a terminal doesn't have, and the one Boots will steer you to on Cowork.
 
 **Where does Boots keep track of things?**
-Boots keeps plain notes files as it works — one per system, plus a short summary of each chat. They live in one fixed place on your own machine — `~/.boots/systems/` — deliberately **not** inside whatever project you happen to be working in. A system is your work, not your repo's, so you can pick it up from any directory, and it never ends up committed to a codebase you push. Nothing depends on you remembering. You don't need to read the files either — ask Boots about a system and it reads the record back to you.
+Boots keeps plain notes files as it works — one per system, plus a short summary of each chat. They live in one fixed place, deliberately **not** inside whatever project you happen to be working in. A system is your work, not your repo's, so you can pick it up from any directory, and it never ends up committed to a codebase you push. Nothing depends on you remembering. You don't need to read the files either — ask Boots about a system and it reads the record back to you.
+
+On Claude Code that place is `~/.boots/` on your own machine. On Cowork the session itself is a sandbox that gets wiped, so Boots keeps its home in a **connected folder** instead — it works out where that is on first run and tells you which folder it chose, rather than quietly writing somewhere that's about to disappear.
 
 **How is this different from a task manager or a builder toolkit?**
 Toolkits help you start; task managers track titles. Boots follows a tool through its whole life and, crucially, **finishes** it — reviews it, proves it works, ships it — so half-built tools stop piling up looking done.
@@ -384,8 +427,8 @@ No. Run `boots` and it routes you to the stage a system actually needs. The anyt
 - ✅ Learns — lessons from finished tools become rules the next one follows
 - ✅ Watches live systems — checks a shipped tool still works *and still gives the right answer*, and evolves it with you
 - ✅ Builds any form — skill, agent, automation, connector, app, script, or notes
-- ⚪ Support for other AI tools beyond Claude Code
-- ⚪ Packaged as an installable Claude Code plugin / marketplace entry
+- 🟢 Packaged as an installable plugin, published from a marketplace in this repo (Cowork today; Claude Code still installs by clone)
+- 🟡 Support for other AI tools beyond Claude Code — Claude Cowork is live; more to come
 - ⚪ Finds work in more places (more sources it can dig through)
 
 <br/>
@@ -426,19 +469,26 @@ directories, and is stripped before upload.
 What is **never** sent: the content of any system, your notes, prompts, code, file
 paths, repo names, or anything you typed. Only the shape of the funnel.
 
+The simplest way to change it is to just ask — say *"boots, turn telemetry off"* and it
+runs the right command for wherever it's installed. By hand, on Claude Code:
+
 ```bash
 ~/.claude/skills/boots/bin/boots-config get telemetry   # off | anonymous | community
 ~/.claude/skills/boots/bin/boots-config set telemetry off
 ```
+
+On Cowork the same script lives inside the installed plugin rather than at a fixed path,
+so ask Boots rather than guessing where it landed.
 
 The backend is in [`supabase/`](supabase/) — schema, edge functions and all — so you
 can read exactly what is accepted and stored rather than taking our word for it. The
 client side is one readable shell script:
 [`boots-telemetry-sync`](boots/bin/boots-telemetry-sync).
 
-Boots also checks for updates by asking your git remote whether the clone is behind.
-That's a plain `git` call to wherever you cloned from, and it's off with
-`boots-config set update_check false`.
+On Claude Code, Boots also checks for updates by asking your git remote whether the clone
+is behind. That's a plain `git` call to wherever you cloned from, and it's off with
+`boots-config set update_check false`. On Cowork there is no clone — updates come from the
+marketplace, so nothing here phones anywhere on Boots' behalf.
 
 <br/>
 
